@@ -49,7 +49,25 @@ export async function demoRoutes(app: FastifyInstance): Promise<void> {
         description:
           'Restores the six seeded products to their seeded stock and clears the orders, so the demonstration can be repeated. It touches nothing else, and it grants nothing — there is no payment and no account involved.',
         response: {
-          200: { type: 'object', description: 'What was restored' },
+          // The properties are declared, because Fastify serialises a response
+          // THROUGH its schema: a schema with no properties strips the body.
+          200: {
+            type: 'object',
+            description: 'What was restored',
+            properties: {
+              restored: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string' },
+                    stock: { type: 'integer' },
+                  },
+                },
+              },
+              count: { type: 'integer' },
+            },
+          },
         },
       },
     },

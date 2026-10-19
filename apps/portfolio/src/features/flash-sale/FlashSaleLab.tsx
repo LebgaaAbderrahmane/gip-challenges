@@ -91,8 +91,20 @@ export default function FlashSaleLab() {
       }
       const body = await response.json();
       setProducts(body.data ?? []);
+
+      /*
+       * The scarcest product is selected by default.
+       *
+       * It is the one that demonstrates something: with ten units and thirty
+       * simultaneous requests, ten orders win the last unit and twenty are
+       * refused. A product with forty in stock would just succeed thirty
+       * times, which shows nothing.
+       */
       if (body.data?.length && !selectedId) {
-        setSelectedId(body.data[0].id);
+        const scarcest = body.data.reduce((lowest: Product, product: Product) =>
+          product.stock < lowest.stock ? product : lowest,
+        );
+        setSelectedId(scarcest.id);
       }
     } catch (error) {
       setLoadError(

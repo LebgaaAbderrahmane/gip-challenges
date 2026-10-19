@@ -53,7 +53,7 @@ export const TASKS: Task[] = [
     highlight: 'Ownership enforced from a verified JWT, never a client-supplied ownerId',
     constraints: ['Technology choice is free', 'No frontend required'],
     constraintsAreMandatory: true,
-    status: 'planned',
+    status: 'implemented',
     hasApi: true,
   },
   {
@@ -112,7 +112,7 @@ export const TASKS: Task[] = [
     highlight: 'Argon2id hashing, pinned signing algorithm, short-lived tokens, login rate limiting',
     constraints: ['Any language or framework'],
     constraintsAreMandatory: true,
-    status: 'planned',
+    status: 'implemented',
     hasApi: true,
   },
   {
@@ -138,7 +138,7 @@ export const TASKS: Task[] = [
     highlight: 'Atomic conditional UPDATE plus database-enforced idempotency — proven under real concurrency',
     constraints: ['Any language or framework'],
     constraintsAreMandatory: true,
-    status: 'planned',
+    status: 'implemented',
     hasApi: true,
   },
 ];
