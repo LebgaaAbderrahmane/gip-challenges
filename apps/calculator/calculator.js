@@ -7,6 +7,7 @@
  * loads these files exactly as written.
  */
 import { evaluate, formatResult, ParseError } from './parser.js';
+import { debugEnabled, recordKeyEvent, startDebug } from './keydebug.js';
 
 /*
  * Detect whether this demo is running inside a frame.
@@ -221,13 +222,22 @@ document.addEventListener('keydown', (event) => {
   if (event.metaKey || event.ctrlKey || event.altKey) return;
 
   const key = keyFromEvent(event);
-  if (!LITERAL_KEYS.has(key) && !['equals', 'backspace', 'clear'].includes(key)) return;
+  const recognised =
+    LITERAL_KEYS.has(key) || key === 'equals' || key === 'backspace' || key === 'clear';
+
+  // Diagnostics (?debug=1) record every key, including rejected ones, so an
+  // ignored keystroke is visible instead of silently doing nothing.
+  recordKeyEvent(event, key, recognised);
+
+  if (!recognised) return;
 
   // Prevent "/" from opening Firefox quick-find and other browser behaviours,
   // and " " from scrolling the page.
   event.preventDefault();
   handleKey(key);
 });
+
+if (debugEnabled()) startDebug();
 
 render();
 

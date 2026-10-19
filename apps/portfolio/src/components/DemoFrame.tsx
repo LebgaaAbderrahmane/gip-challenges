@@ -196,6 +196,17 @@ export default function DemoFrame({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  /**
+   * Propagate `?debug` from the parent URL into the frame, so the demo's own
+   * diagnostics can be switched on from the page that embeds it. Other query
+   * parameters are deliberately dropped.
+   */
+  const frameSrc =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has('debug')
+      ? `${src}${src.includes('?') ? '&' : '?'}debug=1`
+      : src;
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3">
@@ -233,7 +244,7 @@ export default function DemoFrame({
         <iframe
           key={reloadNonce}
           ref={frameRef}
-          src={src}
+          src={frameSrc}
           title={`${name} demo`}
           height={contentHeight}
           loading="eager"
