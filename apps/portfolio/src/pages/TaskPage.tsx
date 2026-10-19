@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import DemoFrame from '@/components/DemoFrame';
 import StatusBadge from '@/components/StatusBadge';
+import TaskContentSections from '@/components/TaskContentSections';
 import { getTaskBySlug } from '@/data/tasks';
 import BinaryStringDemo from '@/features/algorithms/BinaryStringDemo';
 import SmallestMissingPositiveDemo from '@/features/algorithms/SmallestMissingPositiveDemo';
@@ -113,13 +114,8 @@ export default function TaskPage() {
         </section>
       )}
 
-      {/* 5–8 — filled in per task */}
-      <section className="mt-8 space-y-6 text-text-muted">
-        <p>
-          How it works, validation rules, edge cases and verified test results are added when this
-          challenge is implemented. See the task document in the repository for the full write-up.
-        </p>
-      </section>
+      {/* 5–8 — how it works, complexity, edge cases, tests */}
+      {slug && <TaskContentSections slug={slug} />}
 
       {/* 9 — Links */}
       <section className="mt-10 flex flex-wrap gap-3 border-t border-border pt-6 text-sm">

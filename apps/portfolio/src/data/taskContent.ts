@@ -1,0 +1,205 @@
+/**
+ * Long-form content for the shared challenge-page layout (plan §5.5,
+ * sections 5–8: how it works, complexity, edge cases, test evidence).
+ *
+ * This is the page-level companion to docs/tasks/<slug>.md. Where the task
+ * document is the full write-up, this is what a visitor reads on the site.
+ *
+ * HONESTY RULE: `tests.total` must reflect an actual test run. If a number here
+ * stops matching what `pnpm test` reports, that is a bug in this file, not a
+ * number to quietly round.
+ */
+
+export interface ContentBlock {
+  heading?: string;
+  body: string;
+  code?: string;
+}
+
+export interface EdgeCase {
+  input: string;
+  result: string;
+  note?: string;
+}
+
+export interface TaskContent {
+  howItWorks: ContentBlock[];
+  complexity: { measure: string; value: string }[];
+  edgeCases: EdgeCase[];
+  tests: {
+    total: number;
+    command: string;
+    highlights: string[];
+  };
+  notes?: string[];
+}
+
+export const TASK_CONTENT: Record<string, TaskContent> = {
+  calculator: {
+    howItWorks: [
+      {
+        heading: 'A parser, not an eval',
+        body: 'The expression is never passed to eval() or new Function(). Both are equivalent to arbitrary code execution, and a calculator evaluates text the user typed — that combination would let a visitor execute code in the page origin. A tokenizer and a recursive-descent parser are a few dozen lines, so there is no real trade-off.',
+      },
+      {
+        heading: 'Grammar and precedence',
+        body: 'Loosest to tightest binding: parentheses, then unary sign, then multiplication and division, then addition and subtraction. Left associativity gives 100 / 5 / 2 = 10.',
+        code: `expression := term (("+" | "-") term)*
+term       := factor (("*" | "/") factor)*
+factor     := unary | "(" expression ")" | number
+unary      := ("+" | "-")* factor`,
+      },
+      {
+        heading: 'The parser is separated from the DOM',
+        body: 'parser.js is a pure module with no DOM access at all, so the algorithm is tested headlessly. calculator.js handles only event wiring and input guards.',
+      },
+      {
+        heading: 'Errors keep your work',
+        body: 'On a parse failure the expression stays on screen so it can be corrected, rather than being cleared. Division by zero raises rather than producing Infinity — a non-finite value is never displayed as a valid answer.',
+      },
+      {
+        heading: 'Display rounding',
+        body: '0.1 + 0.2 is 0.30000000000000004 in floating point. The result is rounded to 12 significant digits for display only; the unrounded value is never fed back into further arithmetic, so rounding cannot corrupt a later operation.',
+      },
+    ],
+    complexity: [
+      { measure: 'Parsing', value: 'O(n) in expression length — single left-to-right pass' },
+      { measure: 'Space', value: 'O(n) for tokens and the recursion stack' },
+      { measure: 'Dependencies', value: 'None — no framework, no bundler, no build step' },
+    ],
+    edgeCases: [
+      { input: '2 + 3 * 4', result: '14', note: 'Precedence, not left-to-right' },
+      { input: '(2 + 3) * 4', result: '20', note: 'Parentheses override precedence' },
+      { input: '10 / 2', result: '5' },
+      { input: '0.1 + 0.2', result: '0.3', note: 'Rounded for display only' },
+      { input: '5 / 0', result: 'Error', note: 'Never displays Infinity' },
+      { input: '5 / (3 - 3)', result: 'Error', note: 'Computed division by zero also caught' },
+      { input: '2 +', result: 'Error', note: 'On evaluate; no crash beforehand' },
+      { input: '()', result: 'Error' },
+      { input: '2++*3', result: 'Error' },
+      { input: '-3 / 2', result: '-1.5', note: 'Unary sign binds tighter' },
+      { input: '100 / 5 / 2', result: '10', note: 'Left-associative' },
+    ],
+    tests: {
+      total: 42,
+      command: 'pnpm --filter @gip/calculator test',
+      highlights: [
+        '21 parser tests: tokenizing, precedence, parentheses, unary signs, malformed input',
+        '21 UI tests that load the real index.html into jsdom and drive the actual handlers, so keyboard support is verified rather than assumed',
+        'A test asserting that input which would execute code under eval — alert(1), constructor, 1;2 — throws a parse error. It exists to fail loudly if anyone switches the implementation to eval().',
+        'Keyboard: Enter, =, Escape, Backspace, parentheses. "/" prevents the browser default; modified keystrokes are left alone so shortcuts still work.',
+      ],
+    },
+    notes: [
+      'The brief requires "only HTML/CSS and javascript with no framework". That restriction is enforced by scripts/demo-build.mjs, which fails the build if the calculator source contains eval(, new Function(, or a framework import — so the constraint cannot quietly erode.',
+      'No percent or sign-flip key: the brief does not ask for one and its semantics in a chained expression are ambiguous.',
+      'Very long expressions scroll horizontally instead of wrapping, which keeps the layout stable but hides earlier input on narrow screens.',
+    ],
+  },
+
+  'binary-string': {
+    howItWorks: [
+      {
+        heading: 'Diagonal construction',
+        body: 'Build the answer one position at a time: at index i, take the bit at nums[i][i] and flip it.',
+        code: `for (let i = 0; i < n; i++) {
+  answer[i] = nums[i][i] === '0' ? '1' : '0';
+}`,
+      },
+      {
+        heading: 'Why it is correct',
+        body: 'The answer differs from nums[i] at position i, by construction. Suppose the answer were equal to some nums[j] — equal strings agree at every position, so they would agree at position j. But answer[j] is the complement of nums[j][j], so it does not. Contradiction. This holds for every j, so the answer cannot equal any row.',
+      },
+      {
+        heading: 'Uniqueness is not needed',
+        body: 'The proof never uses the uniqueness precondition. The construction differs from every row whether or not the rows are distinct — uniqueness only matters for the problem statement counting argument, not for correctness here. A dedicated test confirms it by feeding in duplicate rows.',
+      },
+      {
+        heading: 'Tests assert validity, not one answer',
+        body: 'The brief says "if there are multiple answers, you may return any of them". Asserting a particular output string would have tested the wrong thing, so every test checks that the result has length n, is binary, and is absent from the input.',
+      },
+    ],
+    complexity: [
+      { measure: 'Time', value: 'O(n) — one pass over the diagonal' },
+      { measure: 'Space', value: 'O(n) for the returned string (the unavoidable output)' },
+    ],
+    edgeCases: [
+      { input: '["01", "10"]', result: '"11"', note: 'Worked example' },
+      { input: '["0"]', result: '"1"' },
+      { input: '["1"]', result: '"0"' },
+      { input: '["01", "01"]', result: '"10"', note: 'Duplicate rows — still absent from input' },
+      { input: '[]', result: 'Rejected', note: 'No length n to satisfy; the problem is undefined' },
+      { input: '["0", "12"]', result: 'Rejected', note: 'Rows must be length n' },
+      { input: '["12", "01"]', result: 'Rejected', note: 'Only 0 and 1 allowed' },
+    ],
+    tests: {
+      total: 13,
+      command: 'pnpm --filter @gip/portfolio test',
+      highlights: [
+        '600 randomised valid inputs (n from 1 to 12), each checked for length, binary-ness, and absence from the input',
+        'Complete enumeration of valid n = 2 inputs',
+        'A duplicate-row test proving correctness does not depend on uniqueness',
+        'A direct check that the answer differs from every row at that row\'s own index',
+        '7 validation cases, each producing its own specific error message',
+      ],
+    },
+    notes: [
+      'The empty array is rejected rather than answered: with zero inputs there is no length n to satisfy, so returning "0" would be a guess.',
+      'The UI accepts loose input formats as a convenience, but the algorithm itself only accepts a well-formed array.',
+    ],
+  },
+
+  'missing-positive': {
+    howItWorks: [
+      {
+        heading: 'In-place index placement',
+        body: 'For an array of length n, every value x in [1, n] belongs at index x - 1. Repeatedly swap each in-range value into its home index, then scan for the first index whose value is not i + 1. Values outside [1, n] are ignored — they can never be the answer, because with n slots the answer always lies in [1, n + 1].',
+        code: `while (nums[i] >= 1 && nums[i] <= n && nums[nums[i] - 1] !== nums[i]) {
+  const target = nums[i] - 1;
+  const tmp = nums[target];
+  nums[target] = nums[i];
+  nums[i] = tmp;
+}`,
+      },
+      {
+        heading: 'Why the loop terminates',
+        body: 'Each swap places a value into its final correct index, and no swap ever displaces a value that is already correctly placed. The condition nums[nums[i] - 1] !== nums[i] stops the loop precisely when the target already holds the value — which is also what prevents an infinite loop on duplicates, the classic failure mode of this algorithm.',
+      },
+      {
+        heading: 'It mutates its input — deliberately',
+        body: 'That is the trade that makes the algorithm O(1) in auxiliary space. The page passes a copy so your input stays readable and shows you the before and after arrays. The copy is a UI-boundary concern; the algorithm itself is still O(1).',
+      },
+    ],
+    complexity: [
+      { measure: 'Time', value: 'O(n) — O(n) outer passes, O(n) total swaps' },
+      { measure: 'Auxiliary space', value: 'O(1) — in place' },
+      { measure: 'Measured', value: '200,000 consecutive values in ~13 ms' },
+    ],
+    edgeCases: [
+      { input: '[0, -2, 1, 2]', result: '3', note: "The brief's worked example" },
+      { input: '[1, 2, 3]', result: '4', note: 'Every value in [1, n] present' },
+      { input: '[3, 4, -1, 1]', result: '2' },
+      { input: '[7, 8, 9, 11, 12]', result: '1', note: 'No positive in range' },
+      { input: '[]', result: '1' },
+      { input: '[1, 1]', result: '2', note: 'Duplicates must not loop forever' },
+      { input: '[-1, -2]', result: '1' },
+      { input: '[100, 200, 300]', result: '1', note: 'Values beyond n are ignored' },
+      { input: '[1.5, 2]', result: 'Rejected', note: 'Non-integers are not coerced' },
+    ],
+    tests: {
+      total: 16,
+      command: 'pnpm --filter @gip/portfolio test',
+      highlights: [
+        'The brief\'s example plus every case from the task plan\'s test table',
+        'An exhaustive check: every permutation of [-1, 0, 1, 2, 3] (120 cases) compared against a naive Set-based reference implementation',
+        'A 200,000-element array confirming linear time',
+        'Mutation behaviour verified rather than asserted in a comment: the input is reordered, and is a permutation of the original',
+        'Duplicate-heavy arrays confirming the swap-loop guard',
+      ],
+    },
+    notes: [
+      'The function reorders the array as a side effect, which would be unacceptable if the caller needed the original ordering preserved — hence the copy at the UI boundary.',
+      'Non-integer input is rejected rather than coerced, since the problem specifies integers.',
+    ],
+  },
+};
