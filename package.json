@@ -24,7 +24,9 @@
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
     "db:reset": "docker compose down -v && docker compose up -d postgres",
-    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "migrate": "pnpm --filter @gip/lost-found-api migrate",
+    "migrate:all": "pnpm -r --filter \"./services/*\" migrate"
   },
   "devDependencies": {
     "typescript": "^5.9.2",

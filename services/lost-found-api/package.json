@@ -1,0 +1,38 @@
+{
+  "name": "@gip/lost-found-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Lost & Found API \u2014 report lost and found items, search and filter, update your own reports and mark items recovered.",
+  "main": "./src/server.ts",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "build": "tsc --noEmit",
+    "migrate": "tsx src/db/migrate.ts",
+    "seed": "tsx src/db/seed.ts",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.1.0",
+    "@fastify/swagger": "^9.5.1",
+    "@fastify/swagger-ui": "^5.2.3",
+    "@gip/service-core": "workspace:*",
+    "drizzle-orm": "^0.44.7",
+    "fastify": "^5.6.1",
+    "jose": "^6.1.0",
+    "pg": "^8.16.3",
+    "zod": "^4.1.12",
+    "fastify-plugin": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/pg": "^8.15.6",
+    "drizzle-kit": "^0.31.5",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
+  }
+}
