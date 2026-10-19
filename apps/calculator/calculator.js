@@ -12,6 +12,7 @@ const expressionEl = document.getElementById('expression');
 const resultEl = document.getElementById('result');
 const errorEl = document.getElementById('error');
 const keypadEl = document.getElementById('keypad');
+const screenEl = document.querySelector('.screen');
 
 /** The expression being typed. */
 let expression = '';
@@ -29,6 +30,8 @@ function render() {
 
 function setError(message) {
   errorEl.textContent = message ?? '';
+  // Error styling is additive to the "Error" text, never a replacement for it.
+  screenEl?.classList.toggle('screen--error', Boolean(message));
 }
 
 /** Append a literal token, avoiding two operators in a row. */
