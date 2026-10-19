@@ -267,7 +267,14 @@ export default function ApiTester({
           <span className="rounded bg-surface-elevated px-2 py-1 font-semibold text-accent">
             {operation.method}
           </span>
-          <span className="text-text-muted">{operation.path}</span>
+          {/* The FULL address, not just the path. The base URL comes from a
+              build-time variable, so showing the two separately made a
+              mismatch easy to miss — the path looked right while the host
+              was another service entirely. */}
+          <span className="break-all text-text-muted">
+            {service.baseUrl}
+            {operation.path}
+          </span>
         </div>
 
         {operation.parameters && operation.parameters.length > 0 && (
