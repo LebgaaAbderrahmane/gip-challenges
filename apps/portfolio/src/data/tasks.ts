@@ -82,7 +82,7 @@ export const TASKS: Task[] = [
     highlight: 'Diagonal construction — the answer provably differs from every input',
     constraints: ['Any language'],
     constraintsAreMandatory: true,
-    status: 'planned',
+    status: 'implemented',
     hasApi: false,
   },
   {
@@ -125,7 +125,7 @@ export const TASKS: Task[] = [
     highlight: 'O(n) time, O(1) auxiliary space via in-place index placement',
     constraints: ['Any language'],
     constraintsAreMandatory: true,
-    status: 'planned',
+    status: 'implemented',
     hasApi: false,
   },
   {

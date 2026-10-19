@@ -2,9 +2,17 @@ import { Link, useParams } from 'react-router-dom';
 
 import StatusBadge from '@/components/StatusBadge';
 import { getTaskBySlug } from '@/data/tasks';
+import BinaryStringDemo from '@/features/algorithms/BinaryStringDemo';
+import SmallestMissingPositiveDemo from '@/features/algorithms/SmallestMissingPositiveDemo';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 const GITHUB_URL = 'https://github.com/LebgaaAbderrahmane/gip-challenges';
+
+/** Interactive demos, keyed by task slug. */
+const DEMOS: Record<string, React.ComponentType> = {
+  'binary-string': BinaryStringDemo,
+  'missing-positive': SmallestMissingPositiveDemo,
+};
 
 /**
  * Shared challenge page shell (plan §5.5).
@@ -22,6 +30,7 @@ export default function TaskPage() {
 
   if (!task) return <NotFoundPage />;
 
+  const Demo = slug ? DEMOS[slug] : undefined;
   const sourcePath = `apps/${['calculator', 'autocomplete'].includes(task.slug) ? task.slug : 'portfolio'}`;
 
   return (
@@ -75,15 +84,22 @@ export default function TaskPage() {
         </div>
       </dl>
 
-      {/* 4 — Interactive demo slot (implemented per task) */}
-      <section
-        aria-label="Interactive demo"
-        className="mt-8 rounded-xl border border-dashed border-border bg-surface/50 p-8 text-center"
-      >
-        <p className="text-text-muted">
-          The interactive demo for this challenge is being built.
-        </p>
-      </section>
+      {/* 4 — Interactive demo */}
+      {Demo ? (
+        <section
+          aria-label="Interactive demo"
+          className="mt-8 rounded-xl border border-border bg-surface/40 p-5 sm:p-6"
+        >
+          <Demo />
+        </section>
+      ) : (
+        <section
+          aria-label="Interactive demo"
+          className="mt-8 rounded-xl border border-dashed border-border bg-surface/50 p-8 text-center"
+        >
+          <p className="text-text-muted">The interactive demo for this challenge is being built.</p>
+        </section>
+      )}
 
       {/* 5–8 — filled in per task */}
       <section className="mt-8 space-y-6 text-text-muted">
