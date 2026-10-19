@@ -29,7 +29,6 @@
 
 body {
   margin: 0;
-  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 1.25rem 0.875rem;
@@ -38,6 +37,15 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /*
+   * Deliberately no min-height: 100dvh.
+   *
+   * Embedded in an iframe, 100dvh resolves to the IFRAME's height. The
+   * portfolio sizes the frame to its content, so the body would grow with the
+   * frame, which would grow the frame again — an unbounded feedback loop that
+   * pushed the frame to ~1000px on a 593px-tall demo. The demo sizes itself to
+   * its content instead.
+   */
 }
 
 .calc {
