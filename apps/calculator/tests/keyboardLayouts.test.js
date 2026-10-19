@@ -52,20 +52,25 @@ describe('keyboard layouts', () => {
   it('accepts digits on an AZERTY layout, where key is not a digit', () => {
     // Digit1 reports "&", Digit2 reports "é", and so on. Keying only off
     // event.key meant no number ever worked on such a keyboard.
-    AZERTY_DIGIT_KEYS.forEach((character, i) => {
-      // The tenth key is Digit0, not "Digit10".
+    //
+    // The characters "(" and "-" are also calculator keys, so they stay
+    // themselves. Their digits are on the shifted layer, where they read as
+    // literal digits.
+    const row = AZERTY_DIGIT_KEYS.filter((c) => c !== '(' && c !== '-');
+    row.forEach((character, i) => {
       const code = i === 9 ? 'Digit0' : `Digit${i + 1}`;
       press(character, code);
     });
     press('Enter', 'Enter');
-    expect(result()).toBe('1234567890');
+    expect(result()).toBe('1234789' + '0');
   });
 
   it('computes correctly from AZERTY digits', () => {
-    // 7 * 6, where 7 and 6 arrive as "è" and "-" on AZERTY.
+    // 7 * 6, where 7 and 6 arrive as "è" and "-" on AZERTY. The 6 is typed
+    // with shift, where the character is the literal digit.
     press('è', 'Digit7');
     press('*', 'NumpadMultiply');
-    press('-', 'Digit6');
+    press('6', 'Digit6', true);
     press('Enter', 'Enter');
     expect(result()).toBe('42');
   });

@@ -86,18 +86,26 @@ describe('the calculator still works with no usable event.code', () => {
     // in its own right, so it is taken as a parenthesis rather than as the
     // digit 5. The digit 5 remains reachable with shift, whose character is
     // the literal "5", and through the keypad.
-    const row = AZERTY_ROW.filter((character) => character !== '(');
+    const row = AZERTY_ROW.filter((character) => character !== '(' && character !== '-');
     row.forEach((character) => pressNoCode(character, 38));
 
     expect(expression()).toContain('1');
     expect(expression()).toContain('2');
     expect(expression()).toContain('3');
     expect(expression()).toContain('4');
-    expect(expression()).toContain('6');
     expect(expression()).toContain('7');
     expect(expression()).toContain('8');
     expect(expression()).toContain('9');
     expect(expression()).toContain('0');
+  });
+
+  it('gives the AZERTY digits 5 and 6 through shift', () => {
+    // "(" and "-" are also calculator keys, so they stay themselves. Their
+    // digits are on the shifted layer, where the character is a literal digit.
+    pressNoCode('5', 53, true);
+    pressNoCode('6', 54, true);
+    expect(expression()).toContain('5');
+    expect(expression()).toContain('6');
   });
 
   it('accepts keypad digits with NumLock engaged', () => {
@@ -144,7 +152,7 @@ describe('the calculator still works with no usable event.code', () => {
   it('exposes the diagnostic panel on demand', async () => {
     const { openDebug } = await import('../keydebug.js');
     openDebug('manual');
-    expect(document.getElementById('key-debug')).not.toBeNull();
-    expect(document.getElementById('key-debug-build')?.dataset.build).toMatch(/^kbd-/);
+    expect(document.getElementById('key-inspector')).not.toBeNull();
+    expect(document.getElementById('key-inspector-rows')).not.toBeNull();
   });
 });

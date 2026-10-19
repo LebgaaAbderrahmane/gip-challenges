@@ -19,7 +19,7 @@
  */
 import { describe, it, expect } from 'vitest';
 
-import { resolveKey, isCalculatorKey, usableCode } from '../keymap.js';
+import { resolveKey, isCalculatorKey, isCharacterInput, usableCode } from '../keymap.js';
 
 const ev = (key, code, keyCode, shiftKey = false) => ({
   key,
@@ -47,12 +47,23 @@ describe('resolveKey', () => {
       }
     });
 
-    it('reads an AZERTY digit row from the physical key, with no shift', () => {
-      // The character is punctuation; the physical code still says Digit1.
+    it('reads an AZERTY digit row from the character, with no shift', () => {
+      // The character is punctuation; the physical code is Firefox's US
+      // position for that character, which would give the wrong digit. The
+      // character identifies the layout, so it wins.
       AZERTY_ROW.forEach((character, i) => {
-        const code = `Digit${i + 1}`;
-        expect(resolveKey(ev(character, code, 0))).toBe(AZERTY_DIGITS[i]);
+        // "(" and "-" are also calculator keys, so they stay themselves.
+        const expected = character === '(' || character === '-' ? character : AZERTY_DIGITS[i];
+        expect(resolveKey(ev(character, `Digit${i + 1}`, 0))).toBe(expected);
       });
+    });
+
+    it('gives the AZERTY digits 5 and 6 through shift', () => {
+      // "(" and "-" are also calculator keys, so they stay themselves. Their
+      // digits are on the shifted layer of a French AZERTY, where they read
+      // as the literal digits.
+      expect(resolveKey(ev('5', 'Digit5', 0, true))).toBe('5');
+      expect(resolveKey(ev('6', 'Digit6', 0, true))).toBe('6');
     });
 
     it('reads the keypad, whatever NumLock is doing', () => {
@@ -135,10 +146,10 @@ describe('resolveKey', () => {
     it('recovers an AZERTY digit row from the known layout', () => {
       // Neither code nor keyCode identify these: Firefox derives the keycode
       // from the character, so "&" gives 38, which is in no keycode table.
-      // The parenthesis is the exception — it is a calculator key in its own
-      // right, and the digit 5 stays reachable through shift and the keypad.
+      // The parenthesis and the minus are also calculator keys, so they stay
+      // themselves; their digits are reachable through shift.
       AZERTY_ROW.forEach((character, i) => {
-        const expected = character === '(' ? '(' : AZERTY_DIGITS[i];
+        const expected = character === '(' || character === '-' ? character : AZERTY_DIGITS[i];
         expect(resolveKey(ev(character, '', 38))).toBe(expected);
       });
     });
@@ -233,5 +244,46 @@ describe('the numeric keypad, told apart by event.location', () => {
     // Same keycodes, but location 0 means the arrow cluster, not the keypad.
     expect(resolveKey({ ...ev('ArrowUp', '', 38), location: 0 })).toBeNull();
     expect(resolveKey({ ...ev('ArrowLeft', '', 37), location: 0 })).toBeNull();
+  });
+});
+
+describe('shortcuts versus typing', () => {
+  const withModifiers = (props) => ({
+    key: '',
+    code: '',
+    keyCode: 0,
+    which: 0,
+    shiftKey: false,
+    ctrlKey: false,
+    altKey: false,
+    metaKey: false,
+    getModifierState: () => false,
+    ...props,
+  });
+
+  it('ignores a plain browser shortcut', () => {
+    expect(isCharacterInput(withModifiers({ key: 's', code: 'KeyS', ctrlKey: true }))).toBe(false);
+    expect(isCharacterInput(withModifiers({ key: 's', code: 'KeyS', metaKey: true }))).toBe(false);
+    // Ctrl+digit switches tabs in a browser and must stay a shortcut.
+    expect(isCharacterInput(withModifiers({ key: '1', code: 'Digit1', ctrlKey: true }))).toBe(false);
+  });
+
+  it('accepts AltGr, which several layouts use for * and /', () => {
+    const altGr = withModifiers({
+      key: '*', code: 'NumpadMultiply', ctrlKey: true, altKey: true,
+      getModifierState: (name) => name === 'AltGraph',
+    });
+    expect(isCharacterInput(altGr)).toBe(true);
+    expect(resolveKey(altGr)).toBe('*');
+  });
+
+  it('accepts the macOS Option key when it yields a calculator character', () => {
+    const option = withModifiers({ key: '/', code: 'Slash', altKey: true });
+    expect(isCharacterInput(option)).toBe(true);
+    expect(resolveKey(option)).toBe('/');
+  });
+
+  it('still ignores Option for characters the calculator does not use', () => {
+    expect(isCharacterInput(withModifiers({ key: 'e', code: 'KeyE', altKey: true }))).toBe(false);
   });
 });

@@ -140,29 +140,43 @@ export const usableCode = (code) =>
 /**
  * Digit rows of layouts where the unshifted characters are not digits.
  *
- * The physical key (`event.code`) is the general answer and it works on every
- * layout. But `event.code` can be missing — it is documented to be empty or
- * "Unidentified" when the browser cannot map the key — and then `event.keyCode`
- * cannot help either, because Firefox derives it from the ASCII character the
- * key produces rather than from its position (MDN's rules 3 to 5). On French
- * AZERTY the unshifted digit row therefore reports keyCode 38 for "&", and
- * 38 appears nowhere in any keycode table.
+ * The physical key (`event.code`) is normally the answer, but it is not
+ * reliable when the layout is not a US one. Measured in Firefox on a French
+ * AZERTY layout:
  *
- * What survives is the character itself, and the character identifies the
- * digit only if the layout's row is known. That is what these tables are.
+ *   "&"  ->  code "Digit7"    (the US position of "&", not the AZERTY key)
+ *   "é"  ->  code ""          (no US position at all)
+ *   "à"  ->  code ""          (and so the only digit that worked)
  *
- * The rows are data, not code, so another layout is one object away. Each
- * maps the unshifted character of a digit-row key to the digit it produces.
+ * So `event.code` reports where the CHARACTER lives on a US keyboard, which
+ * is not where the key lives on an AZERTY one. A character that identifies
+ * the layout's digit row is therefore more trustworthy than the code, and
+ * must be consulted first.
  *
- * Note the French row: "&" is 1, not 0. The row is & é " ' ( - è _ ç à over
- * 1 2 3 4 5 6 7 8 9 0, because the digits sit on the shifted layer.
+ * Two rules keep this safe on every other layout:
+ *
+ *   1. The table only applies to an UNSHIFTED press. On QWERTY the
+ *      characters in these rows are all shifted — "&" is Shift+7, the double
+ *      quote is Shift+' — so on a US keyboard the table never fires. On
+ *      French AZERTY they are unshifted, which is the case it exists for.
+ *
+ *   2. Characters that are calculator keys in their own right are kept
+ *      separate, because a user pressing "(" means a parenthesis, not a
+ *      digit. Those two are only consulted after the code has had its say.
+ *
+ * Adding a layout is a data change, not a code change.
  */
 const LAYOUT_DIGIT_ROWS = [
   {
     name: 'French AZERTY',
+    /** Unshifted characters that are not calculator keys: unambiguously digits. */
     row: {
-      '&': '1', 'é': '2', '"': '3', "'": '4', '(': '5',
-      '-': '6', 'è': '7', '_': '8', 'ç': '9', 'à': '0',
+      '&': '1', 'é': '2', '"': '3', "'": '4',
+      'è': '7', '_': '8', 'ç': '9', 'à': '0',
+    },
+    /** Unshifted characters that are also calculator keys: consulted later. */
+    ambiguous: {
+      '(': '5', '-': '6',
     },
   },
 ];
@@ -171,18 +185,51 @@ const LAYOUT_DIGIT_ROWS = [
  * Finds the digit a character represents on a known layout.
  *
  * @param {string} character
+ * @param {'row'|'ambiguous'} which table to consult
  * @returns {string|null} the digit, or null when the character is not a
  *   digit-row character of any known layout
  */
-function digitFromLayoutCharacter(character) {
+function digitFromLayoutCharacter(character, which = 'row') {
   if (typeof character !== 'string' || character.length === 0) return null;
 
   for (const layout of LAYOUT_DIGIT_ROWS) {
-    const digit = layout.row[character];
+    const table = which === 'row' ? layout.row : layout.ambiguous;
+    const digit = table?.[character];
     if (digit) return digit;
   }
 
   return null;
+}
+
+/** True when the character is one the calculator acts on. */
+export const isCalculatorCharacter = (character) =>
+  typeof character === 'string' &&
+  (LITERAL_KEYS.has(character) || character === 'Enter' || character === '=');
+
+/**
+ * True when a keypress with modifiers is still the user typing a character.
+ *
+ * A modifier on its own means a shortcut, and shortcuts must reach the
+ * browser: Ctrl+1 switches tabs, Cmd+S saves. But two combinations are
+ * typing, not shortcutting:
+ *
+ *   - AltGr, which several European layouts use to reach characters such as
+ *     "*" and "/". It is reported as ctrl and alt both being set, with
+ *     getModifierState('AltGraph') true.
+ *   - The Option key on macOS, reported as alt alone, which produces
+ *     characters of its own.
+ *
+ * @param {KeyboardEvent} event
+ */
+export function isCharacterInput(event) {
+  const altGraph =
+    typeof event.getModifierState === 'function' && event.getModifierState('AltGraph');
+  if (altGraph) return true;
+
+  const optionOnly = event.altKey && !event.ctrlKey && !event.metaKey;
+  if (optionOnly) return isCalculatorCharacter(event.key);
+
+  return !(event.metaKey || event.ctrlKey || event.altKey);
 }
 
 /**
@@ -201,17 +248,42 @@ export function resolveKey(event) {
 
   const shifted = Boolean(event.shiftKey);
 
-  // 2. A deliberately shifted character. On QWERTY, Shift+9 is "(" and
-  //    Shift+8 is "*"; the user held shift on purpose, so the character is
-  //    what they meant. Only applied to characters the calculator understands,
-  //    so Shift+1 ("!") still falls through to the physical key and types 1.
-  if (shifted && typeof event.key === 'string' && LITERAL_KEYS.has(event.key)) {
-    return event.key;
+  /*
+   * 2. The character itself, when it already means something.
+   *
+   * This comes before the physical key, and the reason is the measurement
+   * that settled the whole problem. In Firefox on a French AZERTY layout:
+   *
+   *   "&"  ->  code "Digit7"    (the US position of "&", not the AZERTY key)
+   *   "_"  ->  code "Minus"
+   *   "é"  ->  code ""
+   *
+   * `event.code` names where the CHARACTER lives on a US keyboard, not where
+   * the key lives on an AZERTY one. On a non-US layout it is therefore not a
+   * physical position at all, and trusting it types the wrong digit.
+   *
+   * The character, by contrast, is exactly what the user's operating system
+   * decided they typed — which is the only thing a calculator can act on.
+   */
+  if (typeof event.key === 'string') {
+    if (/^[0-9]$/.test(event.key)) return event.key;
+    if (LITERAL_KEYS.has(event.key)) return event.key;
   }
 
-  // 3. The physical key. This is the primary source for digits, and it is why
-  //    they work on every layout without needing shift: on French AZERTY the
-  //    key labelled "1" reports "&", but its physical code still says Digit1.
+  // 3. A known layout's digit row, for a character that is not a calculator
+  //    key in its own right.
+  //
+  //    Only for an unshifted press: on a US layout every character in these
+  //    rows is shifted ("&" is Shift+7), so on a US keyboard this never
+  //    fires. On French AZERTY they are unshifted, which is the case it
+  //    exists for.
+  if (!shifted) {
+    const fromLayout = digitFromLayoutCharacter(event.key, 'row');
+    if (fromLayout) return fromLayout;
+  }
+
+  // 4. The physical key. It is the only source for the numeric keypad when
+  //    NumLock is disengaged and the character is a navigation name.
   const code = usableCode(event.code);
   if (code) {
     const fromCode = CODE_TO_KEY[code];
@@ -221,24 +293,14 @@ export function resolveKey(event) {
     if (action) return action;
   }
 
-  // 4. Parentheses. These are calculator keys in their own right, so they are
-  //    taken at face value.
+  // 5. The legacy keycode, for browsers reporting no usable `code`.
   //
-  //    On a French AZERTY the unshifted character of the digit 5 is "(",
-  //    so this step and step 5 disagree about that one key. The parenthesis
-  //    wins here, and the digit 5 remains reachable through shift (whose
-  //    character is the literal "5") and through the keypad. Above, step 3
-  //    has already given the physical code the chance to say "Digit5", so
-  //    whenever the browser supplies a code the digit wins instead.
-  if (event.key === '(' || event.key === ')') return event.key;
-
-  // 5. A digit recovered from a known layout's digit row. This is the path
-  //    that makes an AZERTY digit row work when the browser reports neither a
-  //    usable `code` nor a usable `keyCode`.
-  const fromLayout = digitFromLayoutCharacter(event.key);
-  if (fromLayout) return fromLayout;
-
-  // 6. The legacy keycode, for browsers reporting no usable `code`.
+  //    Only the main digit row and the keypad with NumLock engaged are
+  //    included. The keypad's NumLock-disengaged keycodes (45, 35, 40, 34, 37,
+  //    12, 39, 36, 38, 33) are deliberately absent: those are the very
+  //    keycodes of the navigation keys, so without a usable `code` a keypad 4
+  //    and an ArrowLeft are indistinguishable. Interpreting them would make
+  //    the left arrow type a 4.
   const keyCode = event.keyCode ?? event.which;
   if (typeof keyCode === 'number' && keyCode !== 0) {
     const fromKeyCode = KEYCODE_TO_KEY[keyCode];
@@ -256,12 +318,13 @@ export function resolveKey(event) {
     if (action) return action;
   }
 
-  // 7. A literal digit straight from the character. Reliable, because a
-  //    literal digit is a literal digit on every layout.
-  if (typeof event.key === 'string' && /^[0-9]$/.test(event.key)) return event.key;
-
-  // 8. A literal operator.
-  if (typeof event.key === 'string' && LITERAL_KEYS.has(event.key)) return event.key;
+  // 6. The last of the AZERTY digit-row characters: the two that are also
+  //    calculator keys. Reached only when nothing else spoke, so a real "-"
+  //    on a US keyboard stays a minus sign.
+  if (!shifted) {
+    const fromAmbiguous = digitFromLayoutCharacter(event.key, 'ambiguous');
+    if (fromAmbiguous) return fromAmbiguous;
+  }
 
   return null;
 }

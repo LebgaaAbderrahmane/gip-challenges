@@ -9,7 +9,18 @@
   </head>
   <body>
     <main class="calc">
-      <h1 class="calc__title">Calculator</h1>
+      <div class="calc__head">
+        <h1 class="calc__title">Calculator</h1>
+        <button
+          type="button"
+          id="toggle-inspector"
+          class="calc__inspector-toggle"
+          aria-label="Show keyboard inspector"
+          title="Show what this browser reports for each key"
+        >
+          ⌨
+        </button>
+      </div>
 
       <!-- Screen. aria-live announces results to assistive technology. -->
       <div class="screen">

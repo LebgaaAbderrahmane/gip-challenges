@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { isCalculatorKey } from '@gip/keymap';
+import { isCalculatorKey, isCharacterInput } from '@gip/keymap';
 
 const GITHUB_URL = 'https://github.com/LebgaaAbderrahmane/gip-challenges';
 
@@ -121,7 +121,10 @@ export default function DemoFrame({
   // Forward keys into the demo whenever the demo did not receive them itself.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      // Shortcuts belong to the browser; typing belongs to the demo. AltGr
+      // reaches characters such as "*" and "/" on many European layouts, so
+      // the shared helper tells the two apart.
+      if (!isCharacterInput(event)) return;
 
       const frame = frameRef.current;
       if (!frame || cameFromDemo(event, frame)) return;
@@ -159,6 +162,10 @@ export default function DemoFrame({
           keyCode: event.keyCode,
           which: event.which,
           shiftKey: event.shiftKey,
+          // location distinguishes the numeric keypad (3) from the arrow
+          // cluster (0), which share keycodes. It is needed to tell the
+          // keypad's 4 from ArrowLeft when NumLock is disengaged.
+          location: event.location,
           bubbles: true,
           cancelable: true,
         }),

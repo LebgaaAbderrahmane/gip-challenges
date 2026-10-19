@@ -7,8 +7,14 @@
  * transpilation: the browser loads these files exactly as written.
  */
 import { evaluate, formatResult, ParseError } from './parser.js';
-import { resolveKey, LITERAL_KEYS } from './keymap.js';
-import { debugEnabled, openDebug, recordKeyEvent, startDebug } from './keydebug.js';
+import { resolveKey, isCharacterInput, LITERAL_KEYS } from './keymap.js';
+import {
+  debugEnabled,
+  openDebug,
+  recordKeyEvent,
+  startDebug,
+  toggleInspector,
+} from './keydebug.js';
 
 /*
  * Detect whether this demo is running inside a frame.
@@ -146,10 +152,20 @@ keypadEl.addEventListener('click', (event) => {
 });
 
 document.addEventListener('keydown', (event) => {
-  // Never hijack typing inside a field, and never steal browser shortcuts.
+  // Never hijack typing inside a field.
   const target = event.target;
   if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
-  if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+  /*
+   * Shortcuts belong to the browser; typing belongs to the calculator.
+   *
+   * Ctrl+1 switches tabs and Cmd+S saves, so a plain modifier is ignored.
+   * AltGr is the exception: several European layouts reach "*" and "/" with
+   * it, and it is reported as ctrl and alt both being set. Treating it as a
+   * shortcut blocked exactly those two operators, which is why they could not
+   * be typed. `isCharacterInput` knows the difference.
+   */
+  if (!isCharacterInput(event)) return;
 
   const key = resolveKey(event);
   const recognised = key !== null;
@@ -177,6 +193,11 @@ document.addEventListener('keydown', (event) => {
 });
 
 if (debugEnabled()) startDebug();
+
+// The inspector toggle, for anyone whose keyboard behaves unexpectedly.
+document.getElementById('toggle-inspector')?.addEventListener('click', () => {
+  toggleInspector();
+});
 
 render();
 

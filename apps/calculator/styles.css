@@ -79,6 +79,45 @@ html.is-embedded body {
   text-align: center;
 }
 
+/* Header row: title plus the keyboard-inspector toggle. */
+.calc__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
+}
+
+.calc__head .calc__title {
+  margin: 0;
+  flex: 1;
+  text-align: left;
+}
+
+.calc__inspector-toggle {
+  flex: none;
+  min-width: 2rem;
+  min-height: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--text-subtle);
+  font-size: 0.9375rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.calc__inspector-toggle:hover {
+  color: var(--accent);
+  border-color: var(--border-strong);
+}
+
+.calc__inspector-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* Screen ------------------------------------------------------------------ */
 
 .screen {
