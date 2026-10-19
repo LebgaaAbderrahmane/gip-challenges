@@ -8,6 +8,20 @@
  */
 import { evaluate, formatResult, ParseError } from './parser.js';
 
+/*
+ * Detect whether this demo is running inside a frame.
+ *
+ * Standalone, it should fill the viewport and centre itself. Embedded in the
+ * portfolio it must hug its content instead: inside an iframe, 100dvh means
+ * the FRAME's height, and the portfolio sizes the frame to its content — so a
+ * viewport-height body would grow with the frame and grow it again, forever.
+ *
+ * One line, no framework, and it lets a single stylesheet serve both contexts.
+ */
+if (window.self !== window.top) {
+  document.documentElement.classList.add('is-embedded');
+}
+
 const expressionEl = document.getElementById('expression');
 const resultEl = document.getElementById('result');
 const errorEl = document.getElementById('error');

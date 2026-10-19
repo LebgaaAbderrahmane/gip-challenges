@@ -37,15 +37,27 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  /*
-   * Deliberately no min-height: 100dvh.
-   *
-   * Embedded in an iframe, 100dvh resolves to the IFRAME's height. The
-   * portfolio sizes the frame to its content, so the body would grow with the
-   * frame, which would grow the frame again — an unbounded feedback loop that
-   * pushed the frame to ~1000px on a 593px-tall demo. The demo sizes itself to
-   * its content instead.
-   */
+}
+
+/*
+ * Standalone: fill the viewport and centre the calculator in it, scrolling only
+ * when the screen is genuinely too short.
+ *
+ * The embedded case must NOT do this. Inside an iframe, 100dvh resolves to the
+ * IFRAME's height, and the portfolio sizes the frame to its content — so the
+ * body would grow with the frame, which would grow the frame again. Measured:
+ * that loop pushed the frame to 1005px around a 593px demo.
+ *
+ * calculator.js adds `.is-embedded` to <html> when it detects it is running in
+ * a frame, which switches the viewport height off so the demo simply hugs its
+ * own content and the surrounding page never scrolls inside it.
+ */
+html:not(.is-embedded) body {
+  min-height: 100dvh;
+}
+
+html.is-embedded body {
+  min-height: 0;
 }
 
 .calc {

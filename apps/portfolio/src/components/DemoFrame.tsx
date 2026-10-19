@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 const GITHUB_URL = 'https://github.com/LebgaaAbderrahmane/gip-challenges';
 
-/** Keys forwarded from the parent page into the demo when the demo is not focused. */
+/** Keys forwarded from the parent page into the demo. */
 const FORWARDED_KEYS = new Set([
   ...'0123456789.+-*/()'.split(''),
   'Enter',
@@ -19,6 +19,22 @@ const KEY_CODES: Record<string, { code: string }> = {
   Escape: { code: 'Escape' },
   Delete: { code: 'Delete' },
 };
+
+/**
+ * True when the event originated inside the demo frame rather than the parent.
+ *
+ * Keyboard events do NOT bubble across a frame boundary: when the demo has
+ * focus its own listener handles the key, and this parent listener never sees
+ * it. So the parent listener firing at all already implies the demo was not
+ * focused, and forwarding unconditionally cannot double-fire.
+ *
+ * An earlier version checked the frame's activeElement and skipped forwarding
+ * when it looked focused. That heuristic could disagree with the real focus
+ * and swallow keys silently — a dead zone where nothing happened. Removing it
+ * makes the failure mode impossible.
+ */
+const cameFromDemo = (event: KeyboardEvent, frame: HTMLIFrameElement): boolean =>
+  event.target instanceof Node && (frame.contentDocument?.contains(event.target) ?? false);
 
 /**
  * Embeds a vanilla demo in an <iframe>.
@@ -60,15 +76,6 @@ export default function DemoFrame({
   /** Grows/shrinks to the demo's content so the visitor never scrolls inside. */
   const [contentHeight, setContentHeight] = useState<number>(height);
 
-  /** True when the iframe itself currently holds focus. */
-  const frameHasFocus = useCallback(() => {
-    const frame = frameRef.current;
-    if (!frame) return false;
-    const active = frame.contentDocument?.activeElement;
-    // No focused element inside the frame means focus is elsewhere.
-    return Boolean(active && active !== frame.contentDocument?.body);
-  }, []);
-
   /**
    * Size the frame to its content.
    *
@@ -91,10 +98,21 @@ export default function DemoFrame({
     setContentHeight((current) => (Math.abs(current - next) > 1 ? next : current));
   }, []);
 
-  // Focus the frame as soon as it is ready, so the keyboard works immediately.
+  /**
+   * Focus the frame once it is ready.
+   *
+   * Focus is a nicety, not a requirement: browsers may refuse a programmatic
+   * focus that happens without user activation, and the forwarding below means
+   * typing still reaches the demo even when this is refused. That is why the
+   * demo is not *dependent* on being focused.
+   */
   const handleLoad = useCallback(() => {
     setLoaded(true);
-    frameRef.current?.focus();
+    try {
+      frameRef.current?.focus();
+    } catch {
+      /* focus refused — forwarding still covers this */
+    }
     syncHeight();
 
     const frame = frameRef.current;
@@ -116,19 +134,21 @@ export default function DemoFrame({
     };
   }, [reloadNonce]);
 
-  // Forward keys into the demo while the demo does not have focus.
+  // Forward keys into the demo whenever the demo did not receive them itself.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
-
-      const active = document.activeElement;
-      // Never steal keys from a real control on the parent page.
-      if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) return;
-      if (active instanceof HTMLSelectElement) return;
+      if (!FORWARDED_KEYS.has(event.key)) return;
 
       const frame = frameRef.current;
-      if (!frame || frameHasFocus()) return;
-      if (!FORWARDED_KEYS.has(event.key)) return;
+      if (!frame || cameFromDemo(event, frame)) return;
+
+      // Never steal keys from a real control on the parent page.
+      const active = document.activeElement;
+      if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) return;
+      if (active instanceof HTMLSelectElement) return;
+      // A link or button on the parent page should behave normally.
+      if (active instanceof HTMLElement && active.dataset['demoFrameIgnore'] === 'true') return;
 
       event.preventDefault();
       const view = frame.contentWindow as (Window & typeof globalThis) | null;
@@ -136,9 +156,8 @@ export default function DemoFrame({
 
       const { code } = KEY_CODES[event.key] ?? { code: `Digit${event.key}` };
 
-      // Re-dispatch inside the frame so the demo's own listener sees it. The
-      // event is built with the FRAME's constructor, because an instance from
-      // the parent realm would not be accepted by the frame's listener.
+      // Built with the FRAME's constructor: an instance from the parent realm
+      // is not accepted by a listener inside the frame.
       view.document.dispatchEvent(
         new view.KeyboardEvent('keydown', {
           key: event.key,
@@ -151,7 +170,7 @@ export default function DemoFrame({
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [frameHasFocus]);
+  }, []);
 
   return (
     <div>
@@ -193,7 +212,8 @@ export default function DemoFrame({
           src={src}
           title={`${name} demo`}
           height={contentHeight}
-          loading="lazy"
+          loading="eager"
+          tabIndex={0}
           onLoad={handleLoad}
           onError={() => setFailed(true)}
           className="w-full rounded-xl border border-border bg-surface focus:outline-2 focus:outline-offset-2 focus:outline-accent"
