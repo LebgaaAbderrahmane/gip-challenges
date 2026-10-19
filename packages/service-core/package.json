@@ -12,7 +12,8 @@
     "./pagination": "./src/pagination.ts",
     "./config": "./src/config.ts",
     "./db": "./src/db.ts",
-    "./health": "./src/health.ts"
+    "./health": "./src/health.ts",
+    "./migrate": "./src/migrate.ts"
   },
   "scripts": {
     "lint": "tsc --noEmit",
