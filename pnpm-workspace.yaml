@@ -3,15 +3,23 @@ packages:
   - 'services/*'
   - 'packages/*'
 
-# pnpm 11 refuses to run dependency postinstall scripts unless they are listed
-# here, and fails the install with ERR_PNPM_IGNORED_BUILDS otherwise.
+# pnpm 11 runs no dependency install scripts unless they appear in this map, and
+# fails the install with ERR_PNPM_IGNORED_BUILDS otherwise.
 #
-# These are native modules that genuinely need their install script:
+# These are the only native modules that genuinely need to build:
 #   esbuild  — installs its platform binary
-#   argon2   — builds the Argon2id hashing implementation (auth service)
+#   argon2   — Argon2id password hashing (auth service)
 #
-# Nothing else is approved. Adding a dependency here is a deliberate decision,
-# not a reflex.
-onlyBuiltDependencies:
-  - esbuild
-  - argon2
+# Adding an entry here is a deliberate decision, not a reflex.
+allowBuilds:
+  esbuild: true
+  argon2: true
+
+# This development machine has a *global* pnpm config
+# (~/.config/pnpm/config.yaml) containing dangerouslyAllowAllBuilds: true, which
+# silently approves every build script. CI has no such file, so a setting that
+# works locally can still fail there — which is exactly what happened.
+#
+# Setting it false here makes this repository authoritative and identical in both
+# environments: only the packages listed above may run install scripts.
+dangerouslyAllowAllBuilds: false
