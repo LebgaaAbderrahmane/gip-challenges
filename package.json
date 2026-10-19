@@ -28,7 +28,8 @@
     "migrate": "pnpm --filter @gip/lost-found-api migrate",
     "migrate:all": "pnpm -r --filter \"./services/*\" migrate",
     "db:setup:remote": "node scripts/db/setup-remote.mjs",
-    "db:setup:neon": "node scripts/db/setup-neon.mjs"
+    "db:setup:neon": "node scripts/db/setup-neon.mjs",
+    "seed:flash-sale": "pnpm --filter @gip/flash-sale-api seed"
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",
