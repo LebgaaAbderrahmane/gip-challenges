@@ -14,6 +14,12 @@
 
 const MAX_ROWS = 10;
 
+/**
+ * Bumped whenever the key-handling logic changes, so a stale bundle is
+ * obvious at a glance instead of being mistaken for a broken fix.
+ */
+const BUILD = 'kbd-2026-10-19-b';
+
 /** @type {Array<{key: string, code: string, shift: boolean, action: string}>} */
 const log = [];
 
@@ -64,16 +70,27 @@ function ensurePanel() {
   `;
 
   document.head.appendChild(style);
-  panel.append(title, rows, hint);
+  panel.append(title, rows, hint, buildTag());
   document.body.appendChild(panel);
   return panel;
 }
 
-const escapeCell = (value) =>
-  String(value === '' ? '∅' : value)
+function escapeCell(value) {
+  return String(value === '' ? '∅' : value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+/** Build marker, so a stale bundle is visible rather than guessed at. */
+function buildTag() {
+  const tag = document.createElement('p');
+  tag.id = 'key-debug-build';
+  tag.dataset['build'] = BUILD;
+  tag.textContent = `build ${BUILD}`;
+  tag.style.cssText = 'margin:8px 0 0;font:400 10px/1.4 ui-monospace,monospace;color:#71717a';
+  return tag;
+}
 
 function render() {
   const rows = document.getElementById('key-debug-rows');
