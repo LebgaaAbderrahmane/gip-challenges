@@ -8,6 +8,12 @@ importers:
 
   .:
     devDependencies:
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
+      pg:
+        specifier: ^8.23.1
+        version: 8.23.1
       typescript:
         specifier: ^5.9.2
         version: 5.9.3

@@ -46,13 +46,22 @@ export function createDatabase<T extends Record<string, unknown>>(options: {
     // A query that takes longer than this is cancelled rather than left to
     // exhaust the pool.
     statement_timeout: 10_000,
-    // The role is restricted to its own schema, so the search path cannot
-    // reach another service's tables even by accident.
-    options: `-c search_path=${options.schema},public`,
   });
 
-  // The schema is selected with the connection's search_path. Drizzle is
-  // given the table objects so it can map rows back into typed objects.
+  /*
+   * The schema is selected by the ROLE's own search_path, not by a startup
+   * parameter.
+   *
+   * That is deliberate. Neon's pooler rejects `search_path` in the startup
+   * package ("unsupported startup parameter in options: search_path"), so
+   * passing it here would break every hosted deployment. Setting it on the
+   * role works everywhere — the pooler applies role settings at login — and it
+   * has the advantage of being enforced by PostgreSQL rather than by
+   * convention: the role cannot reach another schema even if the code tried.
+   *
+   * Drizzle is given the table objects so it can map rows back into typed
+   * objects.
+   */
   const db = options.tables
     ? drizzle(pool, { schema: options.tables })
     : drizzle(pool);

@@ -26,7 +26,26 @@ export async function migrate(options: { connectionString: string; schema: strin
   await client.connect();
 
   try {
-    await client.query(`CREATE SCHEMA IF NOT EXISTS ${options.schema}`);
+    /*
+     * The schema is NOT created here.
+     *
+     * Creating a schema needs the CREATE privilege on the DATABASE, which
+     * would let a service create schemas anywhere — and it is not needed,
+     * because the setup script already created this service's schema with the
+     * owner connection. The service role owns its schema, so it can create the
+     * tables inside it, which is all a migration needs.
+     */
+    const exists = await client.query(
+      `SELECT 1 FROM information_schema.schemata WHERE schema_name = $1`,
+      [options.schema],
+    );
+
+    if (exists.rowCount === 0) {
+      throw new Error(
+        `The schema "${options.schema}" does not exist. Create it with the owner connection: ` +
+          `DATABASE_URL=<owner url> pnpm db:setup:remote`,
+      );
+    }
 
     // The search path decides where unqualified CREATE statements land.
     // Without this the enum types would be created in "public" instead of in

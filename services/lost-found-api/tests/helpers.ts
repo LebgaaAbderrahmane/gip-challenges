@@ -24,9 +24,12 @@ export function testConfig(overrides: Partial<ServiceConfig> = {}): ServiceConfi
     nodeEnv: 'test',
     port: 0,
     host: '127.0.0.1',
+    // The tests run as the RESTRICTED test role, so they have the same
+    // isolation as production: the role can only see its own schema. The role
+    // points at the test schema through its own search_path.
     databaseUrl:
       process.env.TEST_DATABASE_URL ??
-      'postgres://gip:gip_local_dev_only@localhost:5433/gip',
+      'postgres://lost_found_test_role:gip_local_dev_only@localhost:5433/gip',
     schema: TEST_SCHEMA,
     corsOrigins: ['http://localhost:5173'],
     jwtSecret: TEST_SECRET,
