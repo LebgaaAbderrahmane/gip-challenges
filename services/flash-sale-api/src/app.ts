@@ -17,6 +17,7 @@ import {
 
 import { products } from './db/schema.ts';
 import { flashSaleRoutes } from './routes/flashSale.ts';
+import { demoRoutes } from './routes/demo.ts';
 import { errorResponseSchema } from './schemas.ts';
 import './types.ts';
 
@@ -151,6 +152,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   app.get('/openapi.json', async () => app.swagger());
 
   await app.register(flashSaleRoutes);
+  await app.register(demoRoutes);
 
   app.addHook('onClose', async () => {
     await database.pool.end();

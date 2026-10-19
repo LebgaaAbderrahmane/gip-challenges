@@ -4,6 +4,7 @@ import DemoFrame from '@/components/DemoFrame';
 import StatusBadge from '@/components/StatusBadge';
 import TaskContentSections from '@/components/TaskContentSections';
 import ApiTester from '@/features/api-tester/ApiTester';
+import FlashSaleLab from '@/features/flash-sale/FlashSaleLab';
 import {
   authService,
   flashSaleService,
@@ -109,7 +110,11 @@ export default function TaskPage() {
       </dl>
 
       {/* 4 — Interactive demo */}
-      {apiService ? (
+      {slug === 'flash-sale' ? (
+        <section aria-label="Flash Sale Lab" className="mt-8">
+          <FlashSaleLab />
+        </section>
+      ) : apiService ? (
         <section aria-label="API tester" className="mt-8">
           <ApiTester service={apiService} />
         </section>
