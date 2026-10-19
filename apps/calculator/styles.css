@@ -118,6 +118,32 @@ html.is-embedded body {
   outline-offset: 2px;
 }
 
+/* Capture field ---------------------------------------------------------- */
+
+/*
+ * The field that receives keystrokes as text. It is not display:none,
+ * because that would make it unfocusable and the keyboard would stop
+ * working. Instead it is positioned off the visible area but kept in the
+ * accessibility tree and the tab order.
+ */
+.capture {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  /* Keep it out of the way but still focusable and announced. */
+  clip-path: inset(50%);
+}
+
+.capture:focus-visible {
+  outline: none;
+}
+
 /* Screen ------------------------------------------------------------------ */
 
 .screen {

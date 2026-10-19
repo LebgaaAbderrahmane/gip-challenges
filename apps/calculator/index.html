@@ -22,6 +22,30 @@
         </button>
       </div>
 
+      <!--
+        The keyboard capture field.
+
+        Keystrokes are captured as ordinary text rather than reconstructed
+        from key events. The browser resolves the keyboard layout for us —
+        including dead keys, AltGr and input methods — and reports the
+        character it actually inserted, which is the only signal that means
+        the same thing in every browser. Key events are still used for the
+        few keys that insert no text: Enter, Backspace, Escape, and the
+        numeric keypad when NumLock is disengaged.
+
+        It is not display:none, because that would make it unfocusable.
+      -->
+      <input
+        id="capture"
+        type="text"
+        class="capture"
+        aria-label="Calculator expression, type here to enter numbers and operators"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+      />
+
       <!-- Screen. aria-live announces results to assistive technology. -->
       <div class="screen">
         <p id="expression" class="screen__expression">&nbsp;</p>

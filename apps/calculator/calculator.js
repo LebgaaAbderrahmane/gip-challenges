@@ -7,7 +7,12 @@
  * transpilation: the browser loads these files exactly as written.
  */
 import { evaluate, formatResult, ParseError } from './parser.js';
-import { resolveKey, isCharacterInput, LITERAL_KEYS } from './keymap.js';
+import {
+  resolveKey,
+  resolveCharacter,
+  isCharacterInput,
+  LITERAL_KEYS,
+} from './keymap.js';
 import {
   debugEnabled,
   openDebug,
@@ -35,6 +40,7 @@ const resultEl = document.getElementById('result');
 const errorEl = document.getElementById('error');
 const keypadEl = document.getElementById('keypad');
 const screenEl = document.querySelector('.screen');
+const captureEl = document.getElementById('capture');
 
 /** The expression being typed. */
 let expression = '';
@@ -149,12 +155,87 @@ keypadEl.addEventListener('click', (event) => {
   const button = event.target.closest('button[data-key]');
   if (!button) return;
   handleKey(button.dataset.key);
+  // The click moved focus to the button; hand it back so typing continues.
+  focusCapture();
+});
+
+/*
+ * Keyboard capture
+ * ----------------
+ * Characters arrive as TEXT, not as reconstructed key events.
+ *
+ * The browser resolves the keyboard layout for us and reports the character
+ * it actually inserted. That is the only signal that means the same thing in
+ * every browser: Firefox on a non-US layout reports `event.code` as the US
+ * position of the CHARACTER rather than the physical key, so "&" came back as
+ * "Digit7" and the digit row typed the wrong numbers.
+ *
+ * Key events are still used for the keys that insert no text at all:
+ * Enter, Backspace, Escape, and the numeric keypad when NumLock is
+ * disengaged and the keypad performs navigation instead of typing.
+ */
+const focusCapture = () => {
+  if (!captureEl) return;
+  // A focus attempt can be refused, and that is not fatal.
+  try {
+    captureEl.focus({ preventScroll: true });
+  } catch {
+    /* focus refused — the keydown fallback still works */
+  }
+};
+
+captureEl?.addEventListener('input', (event) => {
+  // The field is only a capture buffer, so it is emptied as soon as it is
+  // read. The expression is held in the calculator's own model.
+  const text = event.data ?? captureEl.value ?? '';
+  captureEl.value = '';
+
+  if (event.inputType === 'deleteContentBackward') {
+    handleKey('backspace');
+    return;
+  }
+
+  // A paste arrives as one string; each character is applied in turn.
+  for (const character of text) {
+    const action = resolveCharacter(character);
+    if (action) handleKey(action);
+  }
+});
+
+captureEl?.addEventListener('keydown', (event) => {
+  /*
+   * Keys that insert no text still arrive here as key events.
+   *
+   * Enter, Backspace and Escape are named keys. The numeric keypad with
+   * NumLock disengaged is the other case: it performs navigation, so nothing
+   * is inserted, and the key event is the only signal that it came from the
+   * keypad. `event.location` is 3 for the keypad, which is what tells it
+   * apart from the arrow cluster.
+   */
+  const named = ['Enter', '=', 'Backspace', 'Escape', 'Delete'];
+  const fromKeypad =
+    event.location === 3 && /^Numpad/.test(event.code ?? '');
+
+  if (!named.includes(event.key) && !fromKeypad) {
+    // Printable characters are handled by the input event that follows.
+    return;
+  }
+
+  if (!isCharacterInput(event)) return;
+
+  event.preventDefault();
+  const action = resolveKey(event);
+  if (action) handleKey(action);
 });
 
 document.addEventListener('keydown', (event) => {
   // Never hijack typing inside a field.
   const target = event.target;
-  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
+  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+    // The capture field has its own handler above.
+    if (target === captureEl) return;
+    return;
+  }
 
   /*
    * Shortcuts belong to the browser; typing belongs to the calculator.
@@ -162,8 +243,7 @@ document.addEventListener('keydown', (event) => {
    * Ctrl+1 switches tabs and Cmd+S saves, so a plain modifier is ignored.
    * AltGr is the exception: several European layouts reach "*" and "/" with
    * it, and it is reported as ctrl and alt both being set. Treating it as a
-   * shortcut blocked exactly those two operators, which is why they could not
-   * be typed. `isCharacterInput` knows the difference.
+   * shortcut blocked exactly those two operators.
    */
   if (!isCharacterInput(event)) return;
 
@@ -187,12 +267,13 @@ document.addEventListener('keydown', (event) => {
 
   if (!recognised) return;
 
-  // Prevent "/" from opening Firefox quick-find and other browser behaviours.
   event.preventDefault();
   handleKey(key);
 });
 
 if (debugEnabled()) startDebug();
+
+focusCapture();
 
 // The inspector toggle, for anyone whose keyboard behaves unexpectedly.
 document.getElementById('toggle-inspector')?.addEventListener('click', () => {

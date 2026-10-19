@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { isCalculatorKey, isCharacterInput } from '@gip/keymap';
+import { isCalculatorKey, isCharacterInput, resolveCharacter, LITERAL_KEYS } from '@gip/keymap';
 
 const GITHUB_URL = 'https://github.com/LebgaaAbderrahmane/gip-challenges';
 
@@ -136,8 +136,7 @@ export default function DemoFrame({
       if (active instanceof HTMLElement && active.dataset['demoFrameIgnore'] === 'true') return;
 
       /*
-       * The SAME resolver the demo uses decides whether a key is worth
-       * forwarding.
+       * The SAME resolver the demo uses decides what a key means.
        *
        * The parent previously filtered on its own list of characters and
        * physical codes, which was a second, drifting copy of the demo's rules.
@@ -148,13 +147,57 @@ export default function DemoFrame({
        */
       if (!isCalculatorKey(event)) return;
 
-      event.preventDefault();
       const view = frame.contentWindow as (Window & typeof globalThis) | null;
       if (!view) return;
 
-      // Both properties are passed through untouched. `code` is the physical
-      // key and is what makes non-QWERTY layouts work; `key` preserves
-      // shift-modified characters such as "(".
+      /*
+       * Characters are forwarded as TEXT, not as synthetic key events.
+       *
+       * The demo captures keystrokes as ordinary text, because letting the
+       * browser resolve the layout is the only thing that behaves identically
+       * in every browser. A synthetic key event inserts no text, so
+       * forwarding one would reach the demo without ever triggering its
+       * input handler. The character is therefore inserted into the demo's
+       * focused field, and an input event is dispatched in the frame's own
+       * realm so the demo receives an event it recognises.
+       */
+      const literal = resolveCharacter(event.key);
+      const frameDoc = frame.contentDocument;
+      let target = frameDoc?.activeElement;
+
+      // The demo focuses its capture field on load, but focus can land
+      // elsewhere — the parent page itself, for instance. Handing focus to
+      // the frame's text field keeps the character path deterministic
+      // instead of depending on which path happened to catch the key.
+      if (frameDoc && (!target || target === frameDoc.body)) {
+        const field = frameDoc.querySelector<HTMLInputElement>('input[type="text"]');
+        if (field) {
+          field.focus();
+          target = field;
+        }
+      }
+
+      if (
+        literal &&
+        LITERAL_KEYS.has(literal) &&
+        (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)
+      ) {
+        target.value += literal;
+        target.dispatchEvent(
+          new view.InputEvent('input', {
+            data: literal,
+            inputType: 'insertText',
+            bubbles: true,
+            cancelable: false,
+          }),
+        );
+        return;
+      }
+
+      // Keys that insert no text — Enter, Backspace, Escape, and the keypad
+      // when NumLock is disengaged — are forwarded as key events, because
+      // that is the only signal they produce.
+      event.preventDefault();
       view.document.dispatchEvent(
         new view.KeyboardEvent('keydown', {
           key: event.key,

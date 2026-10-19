@@ -201,10 +201,41 @@ function digitFromLayoutCharacter(character, which = 'row') {
   return null;
 }
 
-/** True when the character is one the calculator acts on. */
-export const isCalculatorCharacter = (character) =>
-  typeof character === 'string' &&
-  (LITERAL_KEYS.has(character) || character === 'Enter' || character === '=');
+/**
+ * Resolves a single character to a calculator action.
+ *
+ * This is the character-only half of `resolveKey`, used when the character
+ * arrives through the browser's own text insertion rather than through a key
+ * event. A text field lets the browser do the layout work — dead keys, AltGr
+ * and input methods included — and hands over the character it actually
+ * inserted.
+ *
+ * @param {string} character
+ * @returns {string|null} a literal key, a named action, or null
+ */
+export function resolveCharacter(character) {
+  if (typeof character !== 'string' || character.length === 0) return null;
+
+  if (character === 'Enter' || character === '=') return 'equals';
+  if (character === 'Backspace') return 'backspace';
+  if (character === 'Escape' || character === 'Delete') return 'clear';
+
+  if (/^[0-9]$/.test(character)) return character;
+  if (LITERAL_KEYS.has(character)) return character;
+
+  // A known layout's digit row, for a character that is not a calculator key
+  // in its own right. Only unshifted characters reach this point, because a
+  // shifted one is already a literal.
+  const fromLayout = digitFromLayoutCharacter(character, 'row');
+  if (fromLayout) return fromLayout;
+
+  return null;
+}
+
+/**
+ * True when the character is one the calculator acts on.
+ */
+export const isCalculatorCharacter = (character) => resolveCharacter(character) !== null;
 
 /**
  * True when a keypress with modifiers is still the user typing a character.
