@@ -172,8 +172,11 @@ export default function ApiTester({
 
       /*
        * A fetch that throws is a request that never completed: the service
-       * could not be reached, or the browser blocked it. The most common
-       * cause by far is CORS — the service did not list this origin.
+       * could not be reached, the address may be wrong, or the browser
+       * blocked it. The three look identical from here, so the message says
+       * so — and the links below open /health and /docs as ordinary
+       * navigations, which bypass CORS entirely. If those work, the address
+       * is right and the problem is CORS. If they 404, the address is wrong.
        */
       const local = /localhost|127\.0\.0\.1/i.test(service.baseUrl);
       setOutcome({
@@ -181,7 +184,7 @@ export default function ApiTester({
         durationMs,
         message: local
           ? `The request did not reach ${service.baseUrl}. Is the service running locally?`
-          : `The request did not reach ${service.baseUrl}. This is usually CORS: the service must list this site's origin in CORS_ORIGINS.`,
+          : `The request did not reach ${service.baseUrl}. Either the address is wrong, or the service is not listing this site's origin in CORS_ORIGINS. Open the service link below to tell the two apart.`,
         retryable: true,
       });
     } finally {
@@ -380,6 +383,24 @@ export default function ApiTester({
             <p className="mt-1 text-sm text-text-muted">{outcome.message}</p>
             <p className="mt-1 font-mono text-xs text-text-subtle">
               {outcome.durationMs} ms
+            </p>
+            <p className="mt-3 flex flex-wrap gap-3 text-xs">
+              <a
+                href={`${service.baseUrl}/health`}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="font-medium text-accent hover:underline"
+              >
+                Open the service health ↗
+              </a>
+              <a
+                href={`${service.baseUrl}/docs`}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="font-medium text-accent hover:underline"
+              >
+                Open Swagger ↗
+              </a>
             </p>
           </div>
         )}
