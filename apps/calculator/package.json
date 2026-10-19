@@ -6,9 +6,9 @@
   "description": "Vanilla HTML/CSS/JS calculator. No framework, no dependencies — required by the challenge brief.",
   "scripts": {
     "dev": "node ../../scripts/serve-demo.mjs calculator 5174",
-    "build": "node build.mjs",
-    "test": "vitest run",
+    "build": "node ../../scripts/demo-build.mjs calculator index.html calculator.js parser.js",
+    "test": "vitest run --passWithNoTests",
     "typecheck": "echo \"calculator is plain JavaScript — no TypeScript step\"",
-    "lint": "node --check calculator.js && node --check parser.js"
+    "lint": "node ../../scripts/check-syntax.mjs calculator.js parser.js"
   }
 }

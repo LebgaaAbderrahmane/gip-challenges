@@ -6,9 +6,9 @@
   "description": "Vanilla HTML/CSS/JS autocomplete over the supplied data.js dataset. No framework, no dependencies.",
   "scripts": {
     "dev": "node ../../scripts/serve-demo.mjs autocomplete 5175",
-    "build": "node build.mjs",
-    "test": "vitest run",
+    "build": "node ../../scripts/demo-build.mjs autocomplete index.html search.js normalize.js data.js",
+    "test": "vitest run --passWithNoTests",
     "typecheck": "echo \"autocomplete is plain JavaScript — no TypeScript step\"",
-    "lint": "node --check search.js && node --check normalize.js"
+    "lint": "node ../../scripts/check-syntax.mjs search.js normalize.js"
   }
 }

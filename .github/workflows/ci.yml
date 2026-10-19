@@ -44,11 +44,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Set up schemas
-        run: |
-          docker exec -i ${{ job.services.postgres.id }} psql -U gip -d gip < scripts/db/init/01-schemas.sql
-        # The service container is reachable as "postgres" from the runner host.
-        continue-on-error: true
+      - name: Create schemas and roles
+        run: psql "postgres://gip:gip_local_dev_only@localhost:5433/gip" -v ON_ERROR_STOP=1 -f scripts/db/init/01-schemas.sql
 
       - name: Lint
         run: pnpm lint
