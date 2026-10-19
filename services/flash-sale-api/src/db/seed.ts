@@ -60,8 +60,11 @@ async function seed(): Promise<void> {
 
   const app = await buildApp({ config });
   try {
-    // The orders are cleared first, because they reference the products.
+    // The orders are cleared first, because they reference the products. The
+    // products are cleared too: seeding twice must not leave two copies of
+    // every product, which is what happened before this was fixed.
     await app.db.delete(orders);
+    await app.db.delete(products);
 
     // The insert goes through the query builder rather than raw SQL: a
     // schema name is an identifier and cannot be passed as a parameter.

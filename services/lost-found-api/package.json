@@ -22,16 +22,16 @@
     "@gip/service-core": "workspace:*",
     "drizzle-orm": "^0.44.7",
     "fastify": "^5.6.1",
+    "fastify-plugin": "^5.1.0",
     "jose": "^6.1.0",
     "pg": "^8.16.3",
-    "zod": "^4.1.12",
-    "fastify-plugin": "^5.1.0"
+    "tsx": "^4.20.6",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
     "@types/pg": "^8.15.6",
     "drizzle-kit": "^0.31.5",
-    "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vitest": "^5.0.5"
   }

@@ -134,6 +134,9 @@ importers:
       pg:
         specifier: ^8.16.3
         version: 8.23.1
+      tsx:
+        specifier: ^4.20.6
+        version: 4.23.15
       zod:
         specifier: ^4.1.12
         version: 4.6.7
@@ -144,9 +147,6 @@ importers:
       '@types/pg':
         specifier: ^8.15.6
         version: 8.23.1
-      tsx:
-        specifier: ^4.20.6
-        version: 4.23.15
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -180,6 +180,9 @@ importers:
       pg:
         specifier: ^8.16.3
         version: 8.23.1
+      tsx:
+        specifier: ^4.20.6
+        version: 4.23.15
       zod:
         specifier: ^4.1.12
         version: 4.6.7
@@ -190,9 +193,6 @@ importers:
       '@types/pg':
         specifier: ^8.15.6
         version: 8.23.1
-      tsx:
-        specifier: ^4.20.6
-        version: 4.23.15
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -229,6 +229,9 @@ importers:
       pg:
         specifier: ^8.16.3
         version: 8.23.1
+      tsx:
+        specifier: ^4.20.6
+        version: 4.23.15
       zod:
         specifier: ^4.1.12
         version: 4.6.7
@@ -242,9 +245,6 @@ importers:
       drizzle-kit:
         specifier: ^0.31.5
         version: 0.31.11
-      tsx:
-        specifier: ^4.20.6
-        version: 4.23.15
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
