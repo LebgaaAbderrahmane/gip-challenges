@@ -152,7 +152,13 @@ export default function TaskPage() {
         </section>
       ) : apiService ? (
         <section aria-label="API tester" className="mt-8">
-          <ApiTester service={apiService} />
+          {/*
+            The key remounts the tester when the service changes. The
+            component is reused across a route change, so without it the
+            selected operation — which is state — would carry over from the
+            previous challenge and match nothing in the new one.
+          */}
+          <ApiTester key={apiService.name} service={apiService} />
         </section>
       ) : Demo ? (
         <section

@@ -234,7 +234,15 @@ export default function DemoFrame({
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3">
         <p className="text-xs text-text-subtle">
-          {loaded ? 'Interactive demo — click it, or just start typing' : 'Loading demo…'}
+          {loaded ? (
+            'Interactive demo — click it, or just start typing'
+          ) : (
+            <span className="inline-flex items-center gap-2">
+              {/* A moving dot, so the frame is visibly loading. */}
+              <span aria-hidden="true" className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+              Loading demo…
+            </span>
+          )}
         </p>
         <div className="flex gap-3">
           <button

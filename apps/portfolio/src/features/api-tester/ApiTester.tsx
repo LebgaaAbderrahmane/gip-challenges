@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { isDeployed, REQUEST_TIMEOUT_MS } from '@/config/api';
 import { useSession } from '@/features/session/SessionContext';
+import PendingState from '@/components/PendingState';
 import { findCopyables, type Copyable } from './copyables';
 
 /**
@@ -59,11 +60,18 @@ export default function ApiTester({
   const token = localToken.trim() || session.token || '';
 
   const abortRef = useRef<AbortController | null>(null);
+  /*
+   * Whether the visitor cancelled the request themselves. The abort error is
+   * the same one a timeout produces, and the two deserve different words:
+   * one is the visitor's choice, the other is the service being too slow.
+   */
+  const cancelledRef = useRef(false);
 
   const operation = useMemo<ApiOperation | undefined>(
     () => service.operations.find((op) => op.id === operationId),
     [service.operations, operationId],
   );
+
 
   const selectOperation = (op: ApiOperation) => {
     setOperationId(op.id);
@@ -85,10 +93,16 @@ export default function ApiTester({
     }
   };
 
+  const cancel = useCallback(() => {
+    cancelledRef.current = true;
+    abortRef.current?.abort();
+  }, []);
+
   const send = useCallback(async () => {
     if (!operation) return;
 
     setOutcome({ kind: 'pending' });
+    cancelledRef.current = false;
 
     // Fill the path parameters.
     let path = operation.path;
@@ -204,6 +218,15 @@ export default function ApiTester({
       const durationMs = Math.round(performance.now() - started);
 
       if (error instanceof DOMException && error.name === 'AbortError') {
+        if (cancelledRef.current) {
+          setOutcome({
+            kind: 'failure',
+            durationMs,
+            message: 'You cancelled the request. Nothing was changed on the service.',
+            retryable: true,
+          });
+          return;
+        }
         setOutcome({
           kind: 'failure',
           durationMs,
@@ -236,6 +259,22 @@ export default function ApiTester({
     }
   }, [operation, parameters, bodyText, token, service.baseUrl]);
 
+  /*
+   * The curl command is built ABOVE the early return below, because a hook
+   * must never be conditional. When it was after the return, the component
+   * called one hook fewer whenever it bailed out, and React reported "Rendered
+   * fewer hooks than expected" — which blanked the page on every
+   * client-side navigation.
+   */
+  const curlCommand = useMemo(() => {
+    if (!operation) return '';
+    const headers = ['-H "Accept: application/json"'];
+    if (operation.requiresAuth) headers.push('-H "Authorization: Bearer <token>"');
+    if (bodyText.trim() !== '') headers.push('-H "Content-Type: application/json"');
+    const body = bodyText.trim() !== '' ? ` \\\n  -d '${bodyText.replace(/\n\s*/g, '')}'` : '';
+    return `curl -X ${operation.method} "${service.baseUrl}${operation.path}" \\\n  ${headers.join(' \\\n  ')}${body}`;
+  }, [operation, service.baseUrl, bodyText]);
+
   if (!operation) {
     return (
       <p className="rounded-xl border border-border bg-surface p-6 text-sm text-text-muted">
@@ -243,14 +282,6 @@ export default function ApiTester({
       </p>
     );
   }
-
-  const curlCommand = useMemo(() => {
-    const headers = ['-H "Accept: application/json"'];
-    if (operation.requiresAuth) headers.push('-H "Authorization: Bearer <token>"');
-    if (bodyText.trim() !== '') headers.push('-H "Content-Type: application/json"');
-    const body = bodyText.trim() !== '' ? ` \\\n  -d '${bodyText.replace(/\n\s*/g, '')}'` : '';
-    return `curl -X ${operation.method} "${service.baseUrl}${operation.path}" \\\n  ${headers.join(' \\\n  ')}${body}`;
-  }, [operation, service.baseUrl, bodyText]);
 
   return (
     <div className="space-y-4">
@@ -464,11 +495,16 @@ export default function ApiTester({
         )}
 
         {outcome.kind === 'pending' && (
-          <p className="text-sm text-text-muted">
-            {isDeployed(service.baseUrl)
-              ? 'Waiting for the service… a free-tier service can take a moment to wake.'
-              : 'Waiting for the service…'}
-          </p>
+          <PendingState
+            title="Waiting for the service…"
+            detail={
+              isDeployed(service.baseUrl)
+                ? 'The request goes to the deployed API. On the free tier the service may be asleep, and the first request wakes it.'
+                : 'The request goes to the local API.'
+            }
+            onCancel={cancel}
+            cancelLabel="Cancel the request"
+          />
         )}
 
         {outcome.kind === 'failure' && (

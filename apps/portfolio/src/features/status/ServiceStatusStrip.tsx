@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { API_BASE_URLS } from '@/config/api';
 
@@ -70,7 +70,7 @@ const check = async (service: { name: string; baseUrl: string }): Promise<Servic
 };
 
 const stateColour: Record<ServiceStatus['state'], string> = {
-  checking: 'bg-text-subtle',
+  checking: 'bg-text-subtle animate-pulse',
   ok: 'bg-success',
   slow: 'bg-warning',
   unreachable: 'bg-danger',
@@ -87,13 +87,18 @@ export default function ServiceStatusStrip() {
   const [statuses, setStatuses] = useState<ServiceStatus[]>(() =>
     SERVICES.map((service) => ({ ...service, state: 'checking', detail: '' })),
   );
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
+      setChecking(true);
       const results = await Promise.all(SERVICES.map(check));
-      if (!cancelled) setStatuses(results);
+      if (!cancelled) {
+        setStatuses(results);
+        setChecking(false);
+      }
     };
 
     void run();
@@ -103,6 +108,22 @@ export default function ServiceStatusStrip() {
       cancelled = true;
       clearInterval(timer);
     };
+  }, []);
+
+  /*
+   * The check can be run again by hand.
+   *
+   * A service on a free tier is asleep most of the time, and the first
+   * request wakes it. That can take a moment, and a visitor who is looking
+   * at "unreachable" deserves to be able to try again without waiting for
+   * the next poll.
+   */
+  const [refreshing, setRefreshing] = useState(false);
+  const recheck = useCallback(async () => {
+    setRefreshing(true);
+    const results = await Promise.all(SERVICES.map(check));
+    setStatuses(results);
+    setRefreshing(false);
   }, []);
 
   return (
@@ -129,6 +150,14 @@ export default function ServiceStatusStrip() {
         Checked from your browser, against the deployed services. A service that has been idle
         may be waking up, which takes a moment on the free tier.
       </p>
+      <button
+        type="button"
+        onClick={() => void recheck()}
+        disabled={refreshing || checking}
+        className="mt-2 rounded-md border border-border px-2.5 py-1 text-xs text-text-muted transition-colors hover:border-border-strong hover:text-text disabled:opacity-60"
+      >
+        {refreshing || checking ? 'Checking…' : 'Check again now'}
+      </button>
     </section>
   );
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { API_BASE_URLS } from '@/config/api';
+import PendingState, { Skeleton } from '@/components/PendingState';
 
 /**
  * The Flash Sale Lab.
@@ -67,6 +68,16 @@ export default function FlashSaleLab() {
   const [concurrency, setConcurrency] = useState(20);
 
   const [attempts, setAttempts] = useState<Attempt[]>([]);
+  /*
+   * The live view of a running batch.
+   *
+   * The batch waits for every request before it says anything, which leaves
+   * the panel looking dead while it works. These two states fill that gap:
+   * the rows appear as each request lands, and the counter says how many
+   * have answered.
+   */
+  const [liveAttempts, setLiveAttempts] = useState<Attempt[]>([]);
+  const [progress, setProgress] = useState<{ settled: number; total: number } | null>(null);
   const [running, setRunning] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [orders, setOrders] = useState<unknown[]>([]);
@@ -78,7 +89,14 @@ export default function FlashSaleLab() {
     `demo_lab_${Math.random().toString(36).slice(2, 10)}`,
   );
 
-  const loadProducts = useCallback(async () => {
+  /**
+   * Loads the products, and returns them.
+   *
+   * The caller needs the stock that is on the server now, not the copy it
+   * had before the request. Reading the old state would report a stock
+   * change that never happened — or hide one that did.
+   */
+  const loadProducts = useCallback(async (): Promise<Product[]> => {
     setLoading(true);
     setLoadError(null);
     try {
@@ -90,7 +108,8 @@ export default function FlashSaleLab() {
         throw new Error(`The service answered ${response.status}.`);
       }
       const body = await response.json();
-      setProducts(body.data ?? []);
+      const loaded: Product[] = body.data ?? [];
+      setProducts(loaded);
 
       /*
        * The scarcest product is selected by default.
@@ -106,12 +125,14 @@ export default function FlashSaleLab() {
         );
         setSelectedId(scarcest.id);
       }
+      return loaded;
     } catch (error) {
       setLoadError(
         error instanceof Error
           ? `The products could not be loaded. ${error.message}`
           : 'The products could not be loaded.',
       );
+      return [];
     } finally {
       setLoading(false);
     }
@@ -246,6 +267,9 @@ export default function FlashSaleLab() {
     const before = product?.stock ?? 0;
     const count = Math.max(1, Math.min(100, concurrency));
 
+    setLiveAttempts([]);
+    setProgress({ settled: 0, total: count });
+
     const results = await Promise.all(
       Array.from({ length: count }, (_, i) =>
         placeOrder(
@@ -255,20 +279,27 @@ export default function FlashSaleLab() {
           quantity,
           `storm-${Date.now()}-${i}`,
           controller.signal,
-        ),
+        ).then((result) => {
+          // Each request reports itself the moment it lands.
+          setLiveAttempts((previous) => [...previous, result]);
+          setProgress((previous) => ({
+            settled: (previous?.settled ?? 0) + 1,
+            total: count,
+          }));
+          return result;
+        }),
       ),
     );
 
     setAttempts(results);
+    setProgress(null);
 
     const created = results.filter((r) => r.outcome === 'created').length;
     const soldOut = results.filter((r) => r.outcome === 'sold-out').length;
     const other = results.length - created - soldOut;
 
-    await loadProducts();
+    const after = (await loadProducts()).find((p) => p.id === selectedId)?.stock;
     await loadOrders();
-
-    const after = products.find((p) => p.id === selectedId)?.stock;
 
     setSummary(
       `${count} simultaneous requests for ${quantity} unit${quantity === 1 ? '' : 's'} each. ` +
@@ -290,6 +321,8 @@ export default function FlashSaleLab() {
 
     setRunning(true);
     setAttempts([]);
+    setLiveAttempts([]);
+    setProgress(null);
     setSummary(null);
 
     const controller = new AbortController();
@@ -325,6 +358,8 @@ export default function FlashSaleLab() {
 
     setRunning(true);
     setAttempts([]);
+    setLiveAttempts([]);
+    setProgress(null);
     setSummary(null);
 
     const controller = new AbortController();
@@ -414,7 +449,21 @@ export default function FlashSaleLab() {
           Products, with their live stock
         </p>
         {loading ? (
-          <p className="text-sm text-text-muted">Loading the products…</p>
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <PendingState
+              title="Loading the products…"
+              detail="Reading the live stock from the Flash Sale API."
+            />
+            {/* The shape of what is coming, so the wait is not a surprise. */}
+            <div className="mt-3 grid gap-2 sm:grid-cols-2" aria-hidden="true">
+              {[0, 1, 2, 3].map((index) => (
+                <div key={index} className="rounded-lg border border-border p-3">
+                  <Skeleton className="h-3.5 w-2/3" />
+                  <Skeleton className="mt-2 h-2.5 w-1/3" />
+                </div>
+              ))}
+            </div>
+          </div>
         ) : (
           <ul className="grid gap-2 sm:grid-cols-2">
             {products.map((product) => {
@@ -526,10 +575,40 @@ export default function FlashSaleLab() {
         </p>
       )}
 
-      {attempts.length > 0 && (
+      {/* The live progress, while a batch is running. */}
+      {running && (
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <PendingState
+            title={
+              progress
+                ? `${progress.settled} of ${progress.total} requests answered`
+                : 'Working…'
+            }
+            detail="Each request is independent. The rows appear as they come back, and the stock is only updated by the requests that win."
+            onCancel={stop}
+            cancelLabel="Stop the batch"
+          />
+          {progress && progress.total > 0 && (
+            <div
+              aria-hidden="true"
+              className="mt-3 h-1 overflow-hidden rounded-full bg-surface-elevated"
+            >
+              <div
+                className="h-full rounded-full bg-accent transition-[width] duration-200"
+                style={{
+                  width: `${Math.round((progress.settled / progress.total) * 100)}%`,
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {(attempts.length > 0 || liveAttempts.length > 0) && (
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-text-subtle">
             Results
+            {running && ' — live'}
           </p>
           <div className="max-h-72 overflow-auto rounded-xl border border-border bg-surface">
             <table className="w-full text-left text-sm">
@@ -542,7 +621,7 @@ export default function FlashSaleLab() {
                 </tr>
               </thead>
               <tbody>
-                {attempts.map((attempt) => (
+                {(running ? liveAttempts : attempts).map((attempt) => (
                   <tr key={attempt.index} className="border-t border-border/60">
                     <td className="px-3 py-1.5 font-mono text-xs">{attempt.label}</td>
                     <td className="px-3 py-1.5 font-mono text-xs">{attempt.status}</td>

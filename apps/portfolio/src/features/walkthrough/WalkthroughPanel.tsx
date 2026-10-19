@@ -18,7 +18,7 @@ export default function WalkthroughPanel() {
   return (
     <aside
       aria-label="Guided walkthrough"
-      className="fixed inset-x-3 bottom-3 z-50 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-[26rem]"
+      className="fixed inset-x-3 top-[4.75rem] z-50 sm:inset-x-auto sm:right-4 sm:top-[4.75rem] sm:w-[24rem]"
     >
       <div className="rounded-xl border border-accent/40 bg-surface/95 p-4 shadow-2xl backdrop-blur">
         <div className="flex items-start justify-between gap-3">
