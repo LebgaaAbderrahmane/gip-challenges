@@ -5,7 +5,13 @@ import type { Task } from '@/data/tasks';
 
 export default function TaskCard({ task }: { task: Task }) {
   return (
-    <article className="group flex flex-col rounded-xl border border-border bg-surface p-5 transition-colors hover:border-border-strong">
+    // `relative` is required, not decorative. The title link uses the
+    // "stretched link" pattern — a pseudo-element covering the card so the
+    // whole card is clickable — and an absolutely positioned overlay resolves
+    // against the nearest POSITIONED ancestor. Without it the overlay was laid
+    // out against <body>, so every card's invisible hit area covered the
+    // entire page and the cards stacked on top of one another.
+    <article className="group relative flex flex-col rounded-xl border border-border bg-surface p-5 transition-colors hover:border-border-strong">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-mono text-xs text-text-subtle">{task.id}</p>

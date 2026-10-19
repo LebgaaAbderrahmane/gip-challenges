@@ -26,7 +26,6 @@
 
 body {
   margin: 0;
-  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 1.5rem 1rem;
@@ -34,6 +33,28 @@ body {
   color: var(--text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Standalone: fill the viewport and centre the demo in it.
+ *
+ * The embedded case must NOT do this. Inside an iframe, 100dvh resolves to the
+ * IFRAME's height, and the portfolio sizes the frame to its content — so the
+ * body would grow with the frame, which would grow the frame again. That
+ * feedback loop made the embedded demo expand without limit.
+ *
+ * autocomplete.js adds `.is-embedded` to <html> when it detects it is running
+ * in a frame, which switches the viewport height off so the demo simply hugs
+ * its own content. Opened directly, it fills the screen and only scrolls if
+ * the screen is genuinely too short.
+ */
+html:not(.is-embedded) body {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+html.is-embedded body {
+  min-height: 0;
 }
 
 .ac {

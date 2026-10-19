@@ -12,6 +12,21 @@ import { countries } from './data.js';
 import { prepareDataset } from './normalize.js';
 import { search, splitMatch, DEFAULT_LIMIT } from './search.js';
 
+/*
+ * Detect whether this demo is running inside a frame.
+ *
+ * Standalone, it should fill the viewport and centre itself. Embedded in the
+ * portfolio it must hug its content instead: inside an iframe, 100dvh means
+ * the FRAME's height, and the portfolio sizes the frame to its content — so a
+ * viewport-height body would grow with the frame and grow it again, without
+ * limit.
+ *
+ * One line, no framework, and it lets a single stylesheet serve both contexts.
+ */
+if (window.self !== window.top) {
+  document.documentElement.classList.add('is-embedded');
+}
+
 const inputEl = document.getElementById('search');
 const listEl = document.getElementById('suggestions');
 const statusEl = document.getElementById('status');
