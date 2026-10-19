@@ -2,12 +2,13 @@
  * Calculator — DOM wiring.
  *
  * The challenge brief requires "only HTML/CSS and javascript with no framework".
- * This file imports only from ./parser.js, which uses no dependencies and never
- * calls eval(). No framework, no build step, no transpilation: the browser
- * loads these files exactly as written.
+ * This file imports only from ./parser.js and ./keymap.js, which use no
+ * dependencies and never call eval(). No framework, no build step, no
+ * transpilation: the browser loads these files exactly as written.
  */
 import { evaluate, formatResult, ParseError } from './parser.js';
-import { debugEnabled, recordKeyEvent, startDebug } from './keydebug.js';
+import { resolveKey, LITERAL_KEYS } from './keymap.js';
+import { debugEnabled, openDebug, recordKeyEvent, startDebug } from './keydebug.js';
 
 /*
  * Detect whether this demo is running inside a frame.
@@ -33,9 +34,6 @@ const screenEl = document.querySelector('.screen');
 let expression = '';
 /** The last successful result, used when starting a fresh expression. */
 let lastResult = null;
-
-/** Keys that insert a literal character. */
-const LITERAL_KEYS = new Set(['0','1','2','3','4','5','6','7','8','9','.','+','-','*','/','(',')']);
 
 function render() {
   expressionEl.textContent = expression || '\u00a0';
@@ -77,10 +75,11 @@ function appendLiteral(key) {
   if (key === ')' && last !== undefined && '+-*/('.includes(last)) {
     return; // nothing to close
   }
-  if (key === '.' ) {
+  if (key === '.') {
     // Only allow one decimal point per numeric literal.
     const currentNumber = expression.split(/[+\-*/(]/).pop();
     if (currentNumber.includes('.')) return;
+    // A bare "." becomes 0. rather than a leading "." the tokenizer rejects.
     expression += (currentNumber === '' ? '0' : '') + '.';
     render();
     return;
@@ -119,21 +118,17 @@ function equals() {
     const value = evaluate(expression);
     const formatted = formatResult(value);
     lastResult = formatted;
-    expressionEl.textContent = expression;
-    resultEl.textContent = formatted;
-    setError(null);
     expression = formatted;
     render();
-    // render() resets the result to lastResult; keep the source expression shown.
-    expressionEl.textContent = expression;
+    // Keep the source expression visible above the result.
+    expressionEl.textContent = formatted;
   } catch (error) {
     if (error instanceof ParseError) {
       setError(error.message);
-      resultEl.textContent = 'Error';
     } else {
       setError('Something went wrong.');
-      resultEl.textContent = 'Error';
     }
+    resultEl.textContent = 'Error';
   }
 }
 
@@ -150,89 +145,33 @@ keypadEl.addEventListener('click', (event) => {
   handleKey(button.dataset.key);
 });
 
-/**
- * Physical-key mapping, used when `event.key` is not already a literal.
- *
- * `event.key` describes the CHARACTER a layout produces, so the physical key
- * labelled "1" reports "&" on AZERTY and "1" on QWERTY. `event.code` describes
- * the KEY ITSELF and is identical on every layout.
- *
- * Measured before this existed: on a French/Arabic layout every symbol worked
- * but no number did, because "&", "é", "\"", "'", "(", "-", "è", "_", "ç", "à"
- * matched nothing while "+" and "*" — the same on every layout — did.
- */
-const CODE_TO_KEY = {
-  Digit0: '0', Digit1: '1', Digit2: '2', Digit3: '3', Digit4: '4',
-  Digit5: '5', Digit6: '6', Digit7: '7', Digit8: '8', Digit9: '9',
-  Numpad0: '0', Numpad1: '1', Numpad2: '2', Numpad3: '3', Numpad4: '4',
-  Numpad5: '5', Numpad6: '6', Numpad7: '7', Numpad8: '8', Numpad9: '9',
-  Period: '.', NumpadDecimal: '.',
-  Equal: '+', NumpadAdd: '+',
-  Minus: '-', NumpadSubtract: '-',
-  Slash: '/', NumpadDivide: '/',
-  NumpadMultiply: '*',
-};
-
-const NAMED_KEYS = {
-  NumpadEnter: 'equals',
-};
-
-/**
- * Resolve a KeyboardEvent to a calculator action, independent of layout.
- *
- * `event.key` is preferred when it already means the intended thing, so
- * shift-modified input such as "+" on a QWERTY layout still works. Only when
- * it does not — an AZERTY digit, for example — do we fall back to the physical
- * key, which is what makes the calculator work on every keyboard layout rather
- * than only the one its author happened to use.
- */
-function keyFromEvent(event) {
-  // Named actions are checked by character first. "Enter", "Backspace",
-  // "Escape" and "Delete" mean the same thing on every layout, so this works
-  // even in environments that do not supply `event.code` at all.
-  if (event.key === 'Enter' || event.key === '=') return 'equals';
-  if (event.key === 'Backspace') return 'backspace';
-  if (event.key === 'Escape' || event.key === 'Delete') return 'clear';
-
-  // Then by physical key, which is how a non-QWERTY digit is recognised.
-  /*
-   * Shift is what disambiguates the two conflicting cases:
-   *
-   *   QWERTY, Shift+9  -> key "(", code Digit9  -> the user wants "("
-   *   AZERTY, Digit6    -> key "-", code Digit6  -> the user wants "6"
-   *
-   * Both have a literal `event.key` that disagrees with its own code, and they
-   * differ only in whether shift is held. So trust the character when shift is
-   * involved, and the physical key otherwise.
-   */
-  if (event.shiftKey && LITERAL_KEYS.has(event.key)) return event.key;
-
-  const fromCode = CODE_TO_KEY[event.code];
-  if (fromCode && LITERAL_KEYS.has(fromCode)) return fromCode;
-
-  if (LITERAL_KEYS.has(event.key)) return event.key;
-
-  return event.key;
-}
-
 document.addEventListener('keydown', (event) => {
   // Never hijack typing inside a field, and never steal browser shortcuts.
   const target = event.target;
   if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
   if (event.metaKey || event.ctrlKey || event.altKey) return;
 
-  const key = keyFromEvent(event);
-  const recognised =
-    LITERAL_KEYS.has(key) || key === 'equals' || key === 'backspace' || key === 'clear';
+  const key = resolveKey(event);
+  const recognised = key !== null;
 
   // Diagnostics (?debug=1) record every key, including rejected ones, so an
   // ignored keystroke is visible instead of silently doing nothing.
   recordKeyEvent(event, key, recognised);
 
+  // If a physical digit key arrived and still could not be resolved, open the
+  // panel immediately. That is the exact failure being chased, and it means the
+  // person reporting it does not have to go looking for ?debug=1 to tell us
+  // what their browser actually sent.
+  if (!recognised && /^(Digit|Numpad)[0-9]$/.test(event.code)) {
+    openDebug(
+      `a physical "${event.code}" key could not be resolved (key="${event.key}", keyCode=${event.keyCode})`,
+    );
+    return;
+  }
+
   if (!recognised) return;
 
-  // Prevent "/" from opening Firefox quick-find and other browser behaviours,
-  // and " " from scrolling the page.
+  // Prevent "/" from opening Firefox quick-find and other browser behaviours.
   event.preventDefault();
   handleKey(key);
 });
@@ -243,4 +182,4 @@ render();
 
 // Exposed for tests and for manual poking in the browser console. The UI does
 // not depend on this.
-globalThis.__calculator = { handleKey, evaluate, formatResult };
+globalThis.__calculator = { handleKey, evaluate, formatResult, resolveKey };

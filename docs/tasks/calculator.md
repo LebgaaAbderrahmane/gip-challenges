@@ -69,8 +69,48 @@ point at what went wrong rather than saying only "error".
 
 Screen shows the expression being typed above the current result, mirroring a physical calculator.
 
-**Input guards** (each has a test):
+### Keyboard layouts
 
+The calculator has to work on the keyboard its user actually has, not only on
+the author's. Three properties of a key event carry that information, and each
+has a failure mode:
+
+| Property | What it means | Failure mode |
+|---|---|---|
+| `event.code` | The **physical key** — `Digit1`, `Numpad5` | Can be `''` or `'Unidentified'` when the browser cannot map the key (chromium issue 41384052) |
+| `event.key` | The **character** the layout produces | Layout-dependent: the key labelled "1" reports `&` on French AZERTY |
+| `event.keyCode` | Legacy numeric code | Unreliable for printable characters — MDN's rules 3–5 have Firefox derive it from the ASCII character rather than the key's position |
+
+The resolver in [`keymap.js`](../../apps/calculator/keymap.js) consults them in
+that order, and adds two further signals:
+
+- **`event.location`** — `3` means the numeric keypad. It is the only way to
+  tell "the keypad's 4" from "ArrowLeft" when NumLock is disengaged, because
+  both report keyCode `37`. Without it, interpreting the keypad would make
+  the left arrow type a `4`.
+- **Known layout digit rows** — a data table of layouts whose digit row is not
+  digits (`& é " ' ( - è _ ç à` over `1 2 3 4 5 6 7 8 9 0` for French AZERTY).
+  It is the last resort, for when the browser reports neither a usable `code`
+  nor a usable `keyCode`.
+
+One conflict is inherent, and is resolved in favour of digits. On a French
+AZERTY the unshifted character of the digit `5` is `(`. A parenthesis is a
+calculator key in its own right, so the character wins and the digit `5` stays
+reachable through shift — whose character is the literal `5` — and through the
+keypad. Whenever the browser *does* supply a usable `code`, the physical key
+wins instead and the digit comes through directly.
+
+### The embedded demo uses the same resolver
+
+The portfolio page previously kept its own list of "keys worth forwarding"
+into the iframe: a second copy of these rules. It drifted, and the embedded
+page dropped keys the standalone page accepted — the same number working in
+one and not the other. The parent now imports the demo's own `keymap.js`
+(aliased as `@gip/keymap`), so the two cannot disagree. A parity test asserts
+it, and the key resolution is verified in a real browser across seven
+layout combinations on both the standalone and the embedded page.
+
+**Input guards** (each has a test):
 - Two operators in a row are **replaced**, not stacked — except `-` after `*` or `/`, which is a
   legitimate unary sign (`2*-3`).
 - Only one decimal point per numeric literal.

@@ -36,6 +36,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // The calculator's key resolution lives in the demo, because the demo
+      // has no build step and must therefore use a relative import. Aliasing it
+      // here lets the portfolio use the very same file, so the two can never
+      // disagree about what a key means — which was the root of the embedded
+      // demo dropping keys the standalone one accepted.
+      '@gip/keymap': fileURLToPath(new URL('../calculator/keymap.js', import.meta.url)),
     },
   },
   server: {

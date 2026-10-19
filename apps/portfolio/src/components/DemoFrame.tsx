@@ -1,44 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { isCalculatorKey } from '@gip/keymap';
+
 const GITHUB_URL = 'https://github.com/LebgaaAbderrahmane/gip-challenges';
-
-/**
- * Physical-key codes we forward on keyboards where `event.key` is not the
- * character the key produces.
- *
- * `event.key` is layout-dependent: the key labelled "1" reports "&" on AZERTY
- * and "1" on QWERTY. Filtering only on `event.key` dropped every number on a
- * French/Arabic layout while symbols — identical across layouts — kept
- * working. `event.code` names the physical key and is stable everywhere.
- */
-const FORWARDABLE_CODES = new Set([
-  ...'0123456789'.split('').map((d) => `Digit${d}`),
-  ...'0123456789'.split('').map((d) => `Numpad${d}`),
-  'Period',
-  'NumpadDecimal',
-  'Equal',
-  'NumpadAdd',
-  'Minus',
-  'NumpadSubtract',
-  'Slash',
-  'NumpadDivide',
-  'NumpadMultiply',
-  'Enter',
-  'NumpadEnter',
-  'Backspace',
-  'Escape',
-  'Delete',
-]);
-
-/** Keys forwarded when they already mean the right thing on any layout. */
-const FORWARDED_KEYS = new Set([
-  ...'0123456789.+-*/()'.split(''),
-  'Enter',
-  '=',
-  'Backspace',
-  'Escape',
-  'Delete',
-]);
 
 /**
  * True when the event originated inside the demo frame rather than the parent.
@@ -159,10 +123,6 @@ export default function DemoFrame({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
 
-      // Accept the key if EITHER the character or the physical key is one we
-      // handle, so non-QWERTY layouts are not silently dropped.
-      if (!FORWARDED_KEYS.has(event.key) && !FORWARDABLE_CODES.has(event.code)) return;
-
       const frame = frameRef.current;
       if (!frame || cameFromDemo(event, frame)) return;
 
@@ -170,8 +130,20 @@ export default function DemoFrame({
       const active = document.activeElement;
       if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) return;
       if (active instanceof HTMLSelectElement) return;
-      // A link or button on the parent page should behave normally.
       if (active instanceof HTMLElement && active.dataset['demoFrameIgnore'] === 'true') return;
+
+      /*
+       * The SAME resolver the demo uses decides whether a key is worth
+       * forwarding.
+       *
+       * The parent previously filtered on its own list of characters and
+       * physical codes, which was a second, drifting copy of the demo's rules.
+       * A key the demo would have accepted could be dropped here, before it
+       * ever reached the demo — which is precisely how the embedded page
+       * rejected numbers the standalone page accepted. One resolver, imported
+       * from the demo's own file, removes that class of bug entirely.
+       */
+      if (!isCalculatorKey(event)) return;
 
       event.preventDefault();
       const view = frame.contentWindow as (Window & typeof globalThis) | null;
@@ -179,13 +151,14 @@ export default function DemoFrame({
 
       // Both properties are passed through untouched. `code` is the physical
       // key and is what makes non-QWERTY layouts work; `key` preserves
-      // shift-modified characters such as "+". The demo resolves the pair.
-      // Deriving `code` from `key` here would reintroduce the exact bug this
-      // fix exists to remove (an AZERTY "&" would become "Digit&").
+      // shift-modified characters such as "(".
       view.document.dispatchEvent(
         new view.KeyboardEvent('keydown', {
           key: event.key,
           code: event.code,
+          keyCode: event.keyCode,
+          which: event.which,
+          shiftKey: event.shiftKey,
           bubbles: true,
           cancelable: true,
         }),

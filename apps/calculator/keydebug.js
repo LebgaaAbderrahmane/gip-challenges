@@ -41,6 +41,7 @@ function ensurePanel() {
   rows.id = 'key-debug-rows';
 
   const hint = document.createElement('p');
+  hint.id = 'key-debug-reason';
   hint.textContent =
     'Press keys to see what this browser reports. "action" is what the calculator did with it.';
   hint.style.cssText =
@@ -134,11 +135,31 @@ export function recordKeyEvent(event, action, accepted) {
   render();
 }
 
-/** True when diagnostics are requested. */
+/**
+ * True when diagnostics are requested via the URL.
+ */
 export const debugEnabled = () =>
   new URLSearchParams(window.location.search).has('debug');
 
-/** Shows the panel. Called once at startup when ?debug=1. */
+/**
+ * Opens the panel on demand.
+ *
+ * Called automatically when a physical digit key arrives but cannot be
+ * resolved, which is precisely the failure being chased. Without this, the
+ * panel only appears on ?debug=1 and getting that information required
+ * asking the person reporting the bug to go and fetch it.
+ */
+export function openDebug(reason) {
+  ensurePanel();
+  const note = document.getElementById('key-debug-reason');
+  if (note && reason) {
+    note.textContent = `Opened automatically: ${reason}`;
+    note.style.color = '#f87171';
+  }
+  render();
+}
+
+/** Shown once diagnostics are enabled. */
 export function startDebug() {
   ensurePanel();
   render();
