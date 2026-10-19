@@ -35,6 +35,127 @@ export interface TaskContent {
 }
 
 export const TASK_CONTENT: Record<string, TaskContent> = {
+  'lost-found': {
+    howItWorks: [
+      {
+        heading: 'The owner comes from the token, never from the body',
+        body: 'The brief asks for users to update their own reports, so ownership has to be trustworthy. The create request has no owner field at all — the owner is taken from the verified bearer token. A test sends an ownerId in the body and asserts it is ignored.',
+      },
+      {
+        heading: 'Tokens are verified locally, not over the network',
+        body: 'The auth service signs the tokens; this service verifies the signature with the same secret rather than calling the auth service on every request. That avoids a network hop in the hot path and a cascading failure when the auth service is slow. The cost is a shared secret, which is a real boundary and is documented in the architecture notes.',
+      },
+      {
+        heading: 'The signing algorithm is pinned',
+        body: 'A token that names its own algorithm is never trusted, because that is how the alg: none attack works, and how the HMAC/RSA confusion works. The algorithm is fixed in code, and a token claiming anything else is rejected — there is a test for exactly that.',
+      },
+      {
+        heading: 'Search is a real query, not a scan in JavaScript',
+        body: 'The list endpoint filters in PostgreSQL: an exact match on type, status and category, a case-insensitive match on the location, and a search across the title, description and location. The search term has its LIKE wildcards escaped, so searching for a percent sign does not match everything.',
+      },
+      {
+        heading: 'One schema, one role, one service',
+        body: 'The service owns the lost_found schema and connects as the role that owns it, with the search_path set so it cannot reach another service tables even by accident. That isolation is enforced by PostgreSQL, not by convention, and it is verified against the hosted database.',
+      },
+    ],
+    complexity: [
+      { measure: 'Endpoints', value: '5 — create, list, get, update, recover' },
+      { measure: 'Tests', value: '38, against a real PostgreSQL instance' },
+      { measure: 'Database', value: 'One schema, one restricted role' },
+      { measure: 'Documents', value: 'OpenAPI generated from the live route schemas' },
+    ],
+    edgeCases: [
+      { input: 'POST /api/items', result: '201', note: 'The owner is taken from the token' },
+      { input: 'POST without a token', result: '401', note: 'Required for every write' },
+      { input: 'POST with a token signed by another key', result: '401', note: 'The signature is checked' },
+      { input: 'POST with an alg:none token', result: '401', note: 'The algorithm is pinned' },
+      { input: 'POST with a missing title', result: '400', note: 'With the field named in the details' },
+      { input: 'GET /api/items?limit=1000', result: '400', note: 'The limit is bounded' },
+      { input: 'GET /api/items?q=%25', result: '0 results', note: 'LIKE wildcards are escaped' },
+      { input: 'PATCH by another user', result: '403', note: 'Only the owner may change a report' },
+      { input: 'PATCH with an empty body', result: '400', note: 'At least one field is required' },
+      { input: 'PATCH /recover twice', result: '409', note: 'Not a silent no-op' },
+      { input: 'GET /api/items/unknown-id', result: '404', note: 'With the standard error envelope' },
+    ],
+    tests: {
+      total: 38,
+      command: 'pnpm --filter @gip/lost-found-api test',
+      highlights: [
+        'Ownership: the owner is taken from the token, an ownerId in the body is ignored, and another user gets 403 on update and on recover',
+        'Authentication: a missing, malformed, expired, wrongly-signed or alg:none token is all rejected with 401',
+        'Validation: missing title, description, location, an invalid type, an invalid date and an over-long title are all 400',
+        'Search and filtering by type, category and a term across the title, description and location, with the LIKE wildcards escaped',
+        'Pagination: the envelope, the page and the limit, and a limit above the maximum rejected',
+        'State: recovering a report twice is a 409 rather than a silent no-op',
+        'Health: reports the real state and discloses no credentials, host or connection string',
+        'OpenAPI: every route is described, and the document never mentions a password hash',
+      ],
+    },
+    notes: [
+      'A deployed instance sleeps after fifteen minutes on the free tier, so the first request can take a minute. The tester shows a waiting state and offers a retry.',
+      'The API is the deliverable. The tester on this page is an evaluation aid that makes real requests from your browser to the deployed service.',
+    ],
+  },
+
+  auth: {
+    howItWorks: [
+      {
+        heading: 'Argon2id, with a deliberately generous cost',
+        body: 'Argon2id is memory-hard, which makes a stolen hash expensive to attack in bulk, and it resists both side-channel and GPU attacks. The memory cost is 64 MiB with three passes. The plaintext password is never stored, never logged and never returned — the response schema has no passwordHash property at all, so it cannot reach the wire even by accident.',
+      },
+      {
+        heading: 'The email is normalised before it is stored',
+        body: 'Trimmed and lowercased, so Ada@EXAMPLE.test and ada@example.test are one account, with a unique index as the last line of defence if two signups race.',
+      },
+      {
+        heading: 'Minimal claims, and a pinned algorithm',
+        body: 'A token is just base64, so anything sensitive in it would be readable by whoever holds it. The claims are the subject, the email, the issue time and the expiry. The algorithm is fixed in code rather than chosen by the token, which is what makes the alg: none attack impossible.',
+      },
+      {
+        heading: 'The failure does not reveal whether an account exists',
+        body: 'The message and the status are identical whether the account does not exist or the password is wrong, so the endpoint cannot be used to discover which addresses are registered. The timing is identical too: when the account does not exist, a hash of a random password is verified anyway, because otherwise a missing account would return noticeably faster — a timing oracle.',
+      },
+      {
+        heading: 'Login and signup are rate limited',
+        body: 'Ten attempts a minute per address, reported with the standard error envelope. Signup is limited because it costs an email verification; login because it is a password-guessing target.',
+      },
+    ],
+    complexity: [
+      { measure: 'Hashing', value: 'Argon2id — 64 MiB memory, 3 passes, 1 lane' },
+      { measure: 'Token lifetime', value: '15 minutes' },
+      { measure: 'Tests', value: '30, against a real PostgreSQL instance' },
+      { measure: 'Rate limit', value: '10 attempts per minute per address' },
+    ],
+    edgeCases: [
+      { input: 'POST /api/auth/signup', result: '201', note: 'The user is returned without a hash' },
+      { input: 'signup with a duplicate email', result: '409', note: 'A differently-cased one too' },
+      { input: 'signup with a short password', result: '400', note: 'Twelve characters minimum' },
+      { input: 'POST /api/auth/login', result: '200', note: 'A token, its type and its lifetime' },
+      { input: 'login with a wrong password', result: '401', note: 'The same message as an unknown account' },
+      { input: 'login with an unknown account', result: '401', note: 'The same message as a wrong password' },
+      { input: 'GET /api/auth/me without a token', result: '401' },
+      { input: 'GET /api/auth/me with an expired token', result: '401' },
+      { input: 'GET /api/auth/me with an alg:none token', result: '401', note: 'The algorithm is pinned' },
+      { input: 'too many attempts', result: '429', note: 'With the standard error envelope' },
+    ],
+    tests: {
+      total: 30,
+      command: 'pnpm --filter @gip/auth-api test',
+      highlights: [
+        'The stored value is an $argon2id$ hash and never the password, and the response never contains either',
+        'A duplicate email is rejected, and a differently-cased one is the same account',
+        'The failure message and code are identical for a wrong password and for an unknown account, so the endpoint cannot be used to discover registered addresses',
+        'Tokens are rejected when missing, malformed, expired, signed with the wrong key, issued by the wrong issuer, or claiming an algorithm other than the pinned one',
+        'The rate limit is enforced, with its own error code',
+        'The OpenAPI document never mentions a password hash',
+      ],
+    },
+    notes: [
+      'There is no email verification, no password reset and no refresh token. The brief asks for signup, login, hashing and JWT issuing and verification, and a reset flow needs an email transport the free tier does not provide.',
+      'The rate limit is per address rather than per account, so several users behind one address share a budget.',
+    ],
+  },
+
   calculator: {
     howItWorks: [
       {

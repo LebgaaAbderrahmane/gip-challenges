@@ -3,6 +3,13 @@ import { Link, useParams } from 'react-router-dom';
 import DemoFrame from '@/components/DemoFrame';
 import StatusBadge from '@/components/StatusBadge';
 import TaskContentSections from '@/components/TaskContentSections';
+import ApiTester from '@/features/api-tester/ApiTester';
+import {
+  authService,
+  flashSaleService,
+  lostFoundService,
+} from '@/features/api-tester/services.tsx';
+import type { ApiService } from '@/features/api-tester/types.ts';
 import { getTaskBySlug } from '@/data/tasks';
 import BinaryStringDemo from '@/features/algorithms/BinaryStringDemo';
 import SmallestMissingPositiveDemo from '@/features/algorithms/SmallestMissingPositiveDemo';
@@ -22,6 +29,13 @@ const IFRAME_DEMOS: Record<string, { name: string; src: string }> = {
   autocomplete: { name: 'autocomplete', src: '/demos/autocomplete/index.html' },
 };
 
+/** The API testers, keyed by task slug. */
+const API_SERVICES: Record<string, ApiService> = {
+  'lost-found': lostFoundService,
+  auth: authService,
+  'flash-sale': flashSaleService,
+};
+
 /**
  * Shared challenge page shell (plan §5.5).
  *
@@ -39,6 +53,7 @@ export default function TaskPage() {
   if (!task) return <NotFoundPage />;
 
   const Demo = slug ? DEMOS[slug] : undefined;
+  const apiService = slug ? API_SERVICES[slug] : undefined;
   const iframeDemo = slug ? IFRAME_DEMOS[slug] : undefined;
   const sourcePath = `apps/${['calculator', 'autocomplete'].includes(task.slug) ? task.slug : 'portfolio'}`;
 
@@ -94,7 +109,11 @@ export default function TaskPage() {
       </dl>
 
       {/* 4 — Interactive demo */}
-      {Demo ? (
+      {apiService ? (
+        <section aria-label="API tester" className="mt-8">
+          <ApiTester service={apiService} />
+        </section>
+      ) : Demo ? (
         <section
           aria-label="Interactive demo"
           className="mt-8 rounded-xl border border-border bg-surface/40 p-5 sm:p-6"
