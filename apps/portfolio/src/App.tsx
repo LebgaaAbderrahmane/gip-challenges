@@ -2,6 +2,8 @@ import { Route, Routes } from 'react-router-dom';
 
 import SiteShell from '@/layouts/SiteShell';
 import { SessionProvider } from '@/features/session/SessionContext';
+import { WalkthroughProvider } from '@/features/walkthrough/WalkthroughContext';
+import WalkthroughPanel from '@/features/walkthrough/WalkthroughPanel';
 import LandingPage from '@/pages/LandingPage';
 import TasksOverviewPage from '@/pages/TasksOverviewPage';
 import TaskPage from '@/pages/TaskPage';
@@ -19,19 +21,22 @@ export default function App() {
    */
   return (
     <SessionProvider>
-      <SiteShell>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/tasks" element={<TasksOverviewPage />} />
-          {/* Task detail routes are generated from the task table in
-              data/tasks.ts, so a new task cannot exist without a working
-              route. */}
-          <Route path="/tasks/:slug" element={<TaskPage />} />
-          <Route path="/evaluate" element={<EvaluationMapPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </SiteShell>
+      <WalkthroughProvider>
+        <SiteShell>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/tasks" element={<TasksOverviewPage />} />
+            {/* Task detail routes are generated from the task table in
+                data/tasks.ts, so a new task cannot exist without a working
+                route. */}
+            <Route path="/tasks/:slug" element={<TaskPage />} />
+            <Route path="/evaluate" element={<EvaluationMapPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </SiteShell>
+        <WalkthroughPanel />
+      </WalkthroughProvider>
     </SessionProvider>
   );
 }

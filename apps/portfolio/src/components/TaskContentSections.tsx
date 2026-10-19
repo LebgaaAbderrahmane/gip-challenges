@@ -17,24 +17,44 @@ export default function TaskContentSections({ slug }: { slug: string }) {
 
   return (
     <div className="mt-10 space-y-10">
-      {/* 6 — How it works */}
+      {/*
+        6 — How it works.
+
+        Collapsed by default, so the page is scannable, and open on one click
+        for a reader who wants the reasoning. The panel remembers which ones
+        were opened.
+      */}
       <section aria-labelledby="how-it-works">
         <h2 id="how-it-works" className="text-xl font-semibold tracking-tight">
           How it works
         </h2>
-        <div className="mt-4 space-y-5">
+        <p className="mt-2 text-sm text-text-muted">
+          The reasoning behind each decision. Open a section to read it.
+        </p>
+        <div className="mt-4 space-y-2">
           {content.howItWorks.map((block) => (
-            <div key={block.heading ?? block.body.slice(0, 32)}>
-              {block.heading && (
-                <h3 className="text-sm font-semibold text-text">{block.heading}</h3>
-              )}
-              <p className="mt-1 text-sm leading-relaxed text-text-muted">{block.body}</p>
-              {block.code && (
-                <pre className="mt-3 overflow-x-auto rounded-lg border border-border bg-surface p-4 text-xs leading-relaxed text-text-muted">
-                  <code>{block.code}</code>
-                </pre>
-              )}
-            </div>
+            <details
+              key={block.heading ?? block.body.slice(0, 32)}
+              className="group rounded-lg border border-border bg-surface open:border-border-strong"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium marker:hidden">
+                <span>{block.heading ?? 'Details'}</span>
+                <span
+                  aria-hidden="true"
+                  className="text-text-subtle transition-transform group-open:rotate-90"
+                >
+                  →
+                </span>
+              </summary>
+              <div className="border-t border-border px-4 py-3">
+                <p className="text-sm leading-relaxed text-text-muted">{block.body}</p>
+                {block.code && (
+                  <pre className="mt-3 overflow-x-auto rounded-lg border border-border bg-bg p-4 text-xs leading-relaxed text-text-muted">
+                    <code>{block.code}</code>
+                  </pre>
+                )}
+              </div>
+            </details>
           ))}
         </div>
       </section>

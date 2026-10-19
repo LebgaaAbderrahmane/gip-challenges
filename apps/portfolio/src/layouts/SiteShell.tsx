@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 
+import ServiceStatusStrip from '@/features/status/ServiceStatusStrip';
+
 const GITHUB_URL = 'https://github.com/LebgaaAbderrahmane/gip-challenges';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -119,21 +121,27 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
       </main>
 
       <footer className="mt-20 border-t border-border">
-        <div className="container-page flex flex-col gap-4 py-8 text-sm text-text-muted sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            Seven engineering challenges — one front door. Built as a working portfolio, not a
-            mockup.
-          </p>
-          <p className="flex items-center gap-4">
-            <a
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="underline decoration-border underline-offset-4 hover:text-text"
-            >
-              github.com/LebgaaAbderrahmane
-            </a>
-          </p>
+        <div className="container-page grid gap-6 py-8 text-sm text-text-muted md:grid-cols-2">
+          <div>
+            <p>
+              Seven engineering challenges — one front door. Built as a working portfolio, not a
+              mockup.
+            </p>
+            <p className="mt-3 flex flex-wrap items-center gap-4">
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="underline decoration-border underline-offset-4 hover:text-text"
+              >
+                github.com/LebgaaAbderrahmane
+              </a>
+              <Link to="/evaluate" className="underline decoration-border underline-offset-4 hover:text-text">
+                How to evaluate this
+              </Link>
+            </p>
+          </div>
+          <ServiceStatusStrip />
         </div>
       </footer>
     </div>
