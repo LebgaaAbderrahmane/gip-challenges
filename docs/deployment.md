@@ -9,8 +9,12 @@ ones a jury will use.
 |---|---|---|
 | Portfolio | `https://abderrahmane-gip-challenge.netlify.app` | Static build on Netlify |
 | Lost & Found API | `https://gip-challenges.onrender.com` | Fastify on Render, free tier |
-| Authentication API | *(ready to deploy)* | Fastify on Render, free tier |
-| Flash Sale API | *(not deployed yet)* | Day 8 |
+| Authentication API | `https://gip-auth-api.onrender.com` | Fastify on Render, free tier |
+| Flash Sale API | `https://flash-sale-oopm.onrender.com` | Fastify on Render, free tier |
+
+All four were checked live before this document was written, and each service's
+OpenAPI document is at `<base-url>/openapi.json` with its Swagger UI at
+`<base-url>/docs`.
 
 | Resource | Where |
 |---|---|
@@ -85,8 +89,15 @@ every visitor downloads. Only URLs belong there.
 | Variable | Value |
 |---|---|
 | `VITE_LOST_FOUND_API_URL` | `https://gip-challenges.onrender.com` |
-| `VITE_AUTH_API_URL` | *(after Day 6)* |
-| `VITE_FLASH_SALE_API_URL` | *(after Day 8)* |
+| `VITE_AUTH_API_URL` | `https://gip-auth-api.onrender.com` |
+| `VITE_FLASH_SALE_API_URL` | `https://flash-sale-oopm.onrender.com` |
+
+**`VITE_*` values are inlined at build time, so a change to one of them needs
+a rebuild with the build cache cleared.** Netlify caches the dependency
+install, not the Vite bundle, but a stale environment variable in the Netlify
+dashboard will survive a redeploy until the variable itself is changed. If a
+page shows a request going to the wrong host, check the variable before the
+build.
 
 ## The database on Neon
 
@@ -129,8 +140,10 @@ environment blocks to `.env.render`.
 
 **Render sleeps the services.** A free web service spins down after 15
 minutes without traffic and takes about a minute to wake. The first request
-after a sleep is genuinely slow — the portfolio's API tester shows a
-"warming up" state and retries once.
+after a sleep is genuinely slow, so the portfolio makes the wait visible rather
+than hiding it: the request shows a moving indicator, a live elapsed counter
+and a cancel button, and the service status strip in the footer reports the
+service as `waking up` until it answers.
 
 **Neon does not lose data.** It scales to zero after five minutes of
 inactivity and resumes in about 200 ms. This is why it was chosen over
@@ -146,6 +159,12 @@ that is the likely reason.
 
 **Rendering's free Postgres expires 30 days after creation**, so it is not
 used.
+
+**A burst is queued, not dropped.** Against the live Flash Sale API, 50
+simultaneous orders took between 8 and 20 seconds to answer, and one request
+was observed being dropped by the host's proxy with a `522` before it reached
+the application. The stock invariant held in every run. This is a limit of the
+host, not of the code, and it is recorded here rather than measured away.
 
 ## Recovering
 

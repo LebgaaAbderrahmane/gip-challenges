@@ -112,7 +112,18 @@ describe('the customer', () => {
       payload: { productId: product.id, quantity: 1 },
     });
 
-    expect(response.statusCode).toBe(500);
+    /*
+     * A 401, not a 500.
+     *
+     * This used to expect 500, because the route threw a plain Error and
+     * the error handler treats a plain Error as a bug. But a request that
+     * does not say who it is is a mistake in the request, and the caller
+     * needs to be told what to send. The status was wrong and so was the
+     * message, which said nothing at all.
+     */
+    expect(response.statusCode).toBe(401);
+    expect(response.json().error.code).toBe('UNAUTHORIZED');
+    expect(response.json().error.message).toContain('X-Demo-Customer');
   });
 });
 
@@ -185,6 +196,61 @@ describe('validation', () => {
     });
 
     expect(response.statusCode).toBe(400);
+  });
+});
+
+describe('a request with no customer', () => {
+  /*
+   * A request that does not say who it is is a mistake in the REQUEST, not a
+   * bug in the service.
+   *
+   * It used to throw a plain Error, which the error handler treats as a bug
+   * and reports as an opaque 500. A reviewer following the Swagger UI would
+   * have seen "Something went wrong" and no way to tell what was missing.
+   */
+  it('is refused with a message that says what to send', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/orders' });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json().error.code).toBe('UNAUTHORIZED');
+    expect(response.json().error.message).toContain('X-Demo-Customer');
+    expect(response.json().error.message).toContain('Bearer');
+  });
+
+  it('is refused the same way when placing an order', async () => {
+    const product = await insertProduct(app, { name: 'Widget', priceCents: 500, stock: 3 });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/orders',
+      headers: { 'idempotency-key': 'no-customer' },
+      payload: { productId: product.id, quantity: 1 },
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json().error.code).toBe('UNAUTHORIZED');
+  });
+});
+
+describe('the root route', () => {
+  /*
+   * The base URL is the first thing anyone pastes into a browser. A 404
+   * there reads as a broken service rather than as an API with no root
+   * resource, so the root says what this is and where to go next.
+   */
+  it('says what the service is and where to go', async () => {
+    const response = await app.inject({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      service: 'flash-sale-api',
+      title: 'Flash Sale API',
+      links: {
+        documentation: '/docs',
+        specification: '/openapi.json',
+        health: '/health',
+      },
+    });
   });
 });
 

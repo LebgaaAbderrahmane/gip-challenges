@@ -151,6 +151,24 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   app.get('/openapi.json', async () => app.swagger());
 
+  /*
+   * The root route.
+   *
+   * The base URL is the first thing anyone pastes into a browser, and a 404
+   * there reads as a broken service rather than as an API that simply has no
+   * root resource. So the root says what this is and where to go next.
+   */
+  app.get('/', async () => ({
+    service: 'flash-sale-api',
+    title: 'Flash Sale API',
+    summary: 'Browse products, place orders, and see the stock under concurrency.',
+    links: {
+      documentation: '/docs',
+      specification: '/openapi.json',
+      health: '/health',
+    },
+  }));
+
   await app.register(flashSaleRoutes);
   await app.register(demoRoutes);
 

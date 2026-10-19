@@ -13,6 +13,8 @@
  */
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
+import { unauthorized } from '@gip/service-core/errors';
+
 import { verifyToken } from './token.ts';
 
 /** The prefix that marks a demo customer id. */
@@ -45,7 +47,16 @@ export async function resolveCustomer(
     return trimmed.startsWith(DEMO_PREFIX) ? trimmed : `${DEMO_PREFIX}${trimmed}`;
   }
 
-  throw new Error(
-    'A customer is required. Send a bearer token, or the X-Demo-Customer header for the public demo.',
+  /*
+   * A proper AppError, not a plain Error.
+   *
+   * A plain Error is treated as a bug by the error handler, which reports it
+   * as an opaque 500. But a request with no customer is a mistake in the
+   * request, not a bug in the service, and the caller needs to be told what
+   * to send. A 401 with a message naming both ways to identify yourself is
+   * the honest answer.
+   */
+  throw unauthorized(
+    'A customer is required. Send an Authorization: Bearer <token> header, or the X-Demo-Customer header for the public demo.',
   );
 }

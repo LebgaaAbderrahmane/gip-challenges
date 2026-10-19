@@ -325,6 +325,28 @@ describe('GET /api/auth/verify', () => {
   });
 });
 
+describe('the root route', () => {
+  /*
+   * The base URL is the first thing anyone pastes into a browser. A 404
+   * there reads as a broken service rather than as an API with no root
+   * resource, so the root says what this is and where to go next.
+   */
+  it('says what the service is and where to go', async () => {
+    const response = await app.inject({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      service: 'auth-api',
+      title: 'Authentication API',
+      links: {
+        documentation: '/docs',
+        specification: '/openapi.json',
+        health: '/health',
+      },
+    });
+  });
+});
+
 describe('the health endpoint', () => {
   it('reports the real state', async () => {
     const response = await app.inject({ method: 'GET', url: '/health' });

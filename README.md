@@ -5,9 +5,15 @@
 Seven challenges from a single brief, built as one working engineering portfolio: three real
 deployed backend APIs, two vanilla-JavaScript frontends, and two algorithm implementations.
 
-> **Status: in progress.** Every challenge currently reports `Planned`. Badges are advanced by hand
-> only after the corresponding exit criterion is actually met — see
-> [Status honesty](#status-honesty) below.
+> **Status: all seven challenges implemented and deployed.** Badges are advanced by hand only after
+> the corresponding exit criterion is actually met — see [Status honesty](#status-honesty) below.
+
+| | |
+|---|---|
+| **Portfolio** | <https://abderrahmane-gip-challenge.netlify.app> |
+| **Jury guide** | [`docs/jury-guide.md`](docs/jury-guide.md) — the shortest path through the submission |
+| **Architecture** | [`docs/architecture.md`](docs/architecture.md) — how it is put together, and why |
+| **Tests** | 360 across six workspaces, on every push |
 
 ---
 
@@ -78,6 +84,17 @@ pnpm db:up / db:down / db:reset
 
 ---
 
+## The deployed services
+
+| Service | URL | Swagger |
+|---|---|---|
+| Portfolio | <https://abderrahmane-gip-challenge.netlify.app> | — |
+| Lost & Found API | <https://gip-challenges.onrender.com> | [`/docs`](https://gip-challenges.onrender.com/docs) |
+| Authentication API | <https://gip-auth-api.onrender.com> | [`/docs`](https://gip-auth-api.onrender.com/docs) |
+| Flash Sale API | <https://flash-sale-oopm.onrender.com> | [`/docs`](https://flash-sale-oopm.onrender.com/docs) |
+
+---
+
 ## Architecture
 
 ```
@@ -88,12 +105,14 @@ apps/
 services/
   lost-found-api/ auth-api/ flash-sale-api/
 packages/
-  api-contracts/  shared, non-secret request/response types
-  test-utils/     database helpers and factories
+  service-core/   the shared error envelope, pagination, config, migration runner
 docs/
   brief.md        the supplied brief, verbatim
   plan.md         the project plan this implementation follows
-  architecture.md deployment.md jury-guide.md tasks/
+  architecture.md how the whole thing is put together
+  deployment.md   what is deployed where, and how
+  jury-guide.md   the shortest path through the submission
+  tasks/          one document per challenge
 ```
 
 Each service starts, deploys and tests independently, and owns its own migrations. The portfolio
