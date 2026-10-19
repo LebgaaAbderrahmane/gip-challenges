@@ -149,6 +149,67 @@ unary      := ("+" | "-")* factor`,
     ],
   },
 
+  autocomplete: {
+    howItWorks: [
+      {
+        heading: 'Matching is by substring, not by prefix',
+        body: 'The brief asks for mid-word matches — "land" finds Iceland and Ireland. A prefix search would find neither, so the search is a substring scan over the whole label. Every keystroke checks the complete dataset.',
+      },
+      {
+        heading: 'Normalisation happens once, at load',
+        body: 'The 110 labels are normalised when the page loads, never per keystroke. Normalisation decomposes each label into its base characters, drops the combining accents, folds the apostrophe variants to a plain one, lowercases, and collapses whitespace. The original label is always kept for display, so what the user sees is exactly what the dataset says.',
+      },
+      {
+        heading: 'Accents and apostrophes',
+        body: 'A French AZERTY keyboard types "&" for the key labelled "1", and a smart keyboard produces U+2019 where the dataset has U+0027. Folding both means "cote d\'ivoire" and "côte d’ivoire" both find "Côte d\'Ivoire".',
+      },
+      {
+        heading: 'Ranking never hides a match',
+        body: 'Results are ordered exact, then prefix, then any other substring, and only then truncated to the display limit. Within a tier the shorter label wins, because it is the more specific answer. The limit is applied after ranking, so a valid match is never crowded out by a less relevant one.',
+      },
+      {
+        heading: 'Highlighting without innerHTML',
+        body: 'The matched range is mapped back onto the original label, because the normalised string is not character-for-character the same — "Côte d\'Ivoire" normalises to "cote d\'ivoire". The label is then built from text nodes and a <mark> element, never by interpolating into HTML, so a dataset entry could never inject markup.',
+      },
+      {
+        heading: 'No index, because none is needed',
+        body: 'The supplied dataset is 110 records. A linear scan over the prepared entries measures 0.0079 ms per search, so building an index would cost more to construct than the scan ever costs to run. The figure is measured by the test suite rather than assumed.',
+      },
+    ],
+    complexity: [
+      { measure: 'Search', value: 'O(n) over the dataset — 110 records' },
+      { measure: 'Measured', value: '0.0079 ms per search, averaged over 3000 searches' },
+      { measure: 'Normalisation', value: 'O(n) once at load, not per keystroke' },
+      { measure: 'Index', value: 'None — the scan is already faster than building one' },
+    ],
+    edgeCases: [
+      { input: 'land', result: '7 matches', note: 'Finland, Iceland, Ireland, Netherlands, New Zealand, Poland, Switzerland' },
+      { input: "cote d'ivoire", result: "Côte d'Ivoire", note: "The brief's example" },
+      { input: 'cote d’ivoire', result: "Côte d'Ivoire", note: 'Curly apostrophe against the straight one' },
+      { input: 'sao', result: 'São Tomé and Príncipe', note: 'Accents folded on both sides' },
+      { input: 'ICELAND', result: 'Iceland', note: 'Case-insensitive' },
+      { input: 'zzzz', result: 'No match', note: 'Explained in the status line' },
+      { input: '(empty)', result: 'No suggestions', note: 'A hint is shown instead' },
+    ],
+    tests: {
+      total: 33,
+      command: 'pnpm --filter @gip/autocomplete test',
+      highlights: [
+        'The brief\'s own examples: "land" finds Iceland and Ireland, and "cote d\'ivoire" finds "Côte d\'Ivoire"',
+        'The full result set for "land" — seven entries, not the two the brief names — asserted against the supplied data',
+        'Accent folding in both directions, curly and straight apostrophes, and case-insensitivity',
+        'Ranking order asserted explicitly, including that a valid match is never dropped to make room for a better-ranked one',
+        'Highlighting asserted against the original label, including a match that spans a folded character',
+        'The dataset itself checked: 110 records, no duplicate or empty names, and a landmark from the far end of the list to prove the whole dataset is searched',
+        'Performance measured rather than assumed',
+      ],
+    },
+    notes: [
+      'The apostrophe is part of the word, not optional: a query with a space or no apostrophe does not match. The brief asks for apostrophes to be handled — the variants of the character — not for the character to be optional.',
+      'This task is framework-free by choice, not by requirement. The brief constrains the algorithm and the dataset, not the stack.',
+    ],
+  },
+
   'missing-positive': {
     howItWorks: [
       {

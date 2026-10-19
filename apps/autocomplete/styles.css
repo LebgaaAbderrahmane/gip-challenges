@@ -1,0 +1,256 @@
+/*
+ * Autocomplete styles — plain CSS, no framework, no preprocessor.
+ * The palette matches the portfolio's dark theme so the embedded demo does
+ * not look like a different product.
+ */
+
+:root {
+  --bg: #101116;
+  --surface: #191c25;
+  --surface-elevated: #222633;
+  --surface-hover: #272b3a;
+  --accent: #a78bfa;
+  --accent-soft: #a78bfa1f;
+  --text: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --text-subtle: #71717a;
+  --border: #303442;
+  --border-strong: #3d4256;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem 1rem;
+  background: radial-gradient(120% 80% at 50% 0%, #171a24 0%, var(--bg) 60%);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.ac {
+  width: 100%;
+  max-width: 28rem;
+}
+
+/* Header ----------------------------------------------------------------- */
+
+.ac__header {
+  margin-bottom: 1.25rem;
+}
+
+.ac__title {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.ac__subtitle {
+  margin: 0.375rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+}
+
+.ac__subtitle span {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* Field ------------------------------------------------------------------ */
+
+.ac__field {
+  position: relative;
+}
+
+.ac__label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.ac__input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ac__input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.75rem 2.75rem 0.75rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.ac__input::placeholder {
+  color: var(--text-subtle);
+}
+
+.ac__input:hover {
+  border-color: var(--border-strong);
+}
+
+.ac__input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.ac__clear {
+  position: absolute;
+  right: 0.4rem;
+  width: 2.1rem;
+  height: 2.1rem;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--text-subtle);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.ac__clear:hover {
+  color: var(--text);
+  background: var(--surface-elevated);
+}
+
+.ac__clear:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Suggestions ------------------------------------------------------------ */
+
+.ac__list {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 0.375rem 0 0;
+  padding: 0.25rem;
+  list-style: none;
+  max-height: 17rem;
+  overflow-y: auto;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  box-shadow: 0 16px 40px -18px rgba(0, 0, 0, 0.9);
+}
+
+.ac__list[hidden] {
+  display: none;
+}
+
+.ac__option {
+  padding: 0.5625rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.ac__option:hover,
+.ac__option[aria-selected='true'] {
+  background: var(--surface-hover);
+}
+
+.ac__option[aria-selected='true'] {
+  color: var(--text);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* The matched text. Marked with <mark>, never with innerHTML. */
+.ac__option mark {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+  border-radius: 0.1875rem;
+  padding: 0 0.0625rem;
+}
+
+.ac__option-id {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Status ----------------------------------------------------------------- */
+
+.ac__status {
+  margin: 0.625rem 0 0;
+  min-height: 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.ac__status--empty {
+  color: var(--text-subtle);
+}
+
+/* Footer ----------------------------------------------------------------- */
+
+.ac__footer {
+  margin-top: 1.5rem;
+  font-size: 0.75rem;
+  line-height: 1.7;
+  color: var(--text-subtle);
+}
+
+.ac__footer p {
+  margin: 0;
+}
+
+.ac__credit {
+  margin-top: 0.375rem !important;
+}
+
+.ac__footer kbd {
+  font-family: var(--font-mono);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 0.3125rem;
+  padding: 0.1em 0.4em;
+  font-size: 0.9em;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .ac__input,
+  .ac__list {
+    border-color: var(--text-muted);
+  }
+}

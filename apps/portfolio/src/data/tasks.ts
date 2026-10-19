@@ -99,7 +99,7 @@ export const TASKS: Task[] = [
       'NO framework prohibition exists in the brief for this task — see below',
     ],
     constraintsAreMandatory: false,
-    status: 'planned',
+    status: 'implemented',
     hasApi: false,
   },
   {

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>Autocomplete — vanilla JavaScript</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="ac">
+      <header class="ac__header">
+        <h1 class="ac__title">Autocomplete</h1>
+        <p class="ac__subtitle">
+          Searching <span id="count">0</span> country names. Type to filter.
+        </p>
+      </header>
+
+      <div class="ac__field">
+        <label for="search" class="ac__label">Search countries</label>
+        <div class="ac__input-wrap">
+          <input
+            id="search"
+            type="text"
+            class="ac__input"
+            role="combobox"
+            aria-expanded="false"
+            aria-autocomplete="list"
+            aria-controls="suggestions"
+            aria-describedby="status"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            placeholder="land, cote d'ivoire, sao…"
+          />
+          <button type="button" id="clear" class="ac__clear" aria-label="Clear the search">
+            ✕
+          </button>
+        </div>
+
+        <!-- The listbox. aria-live announces the result count to a reader. -->
+        <ul
+          id="suggestions"
+          class="ac__list"
+          role="listbox"
+          aria-label="Country suggestions"
+          hidden
+        ></ul>
+
+        <p id="status" class="ac__status" role="status" aria-live="polite"></p>
+      </div>
+
+      <footer class="ac__footer">
+        <p>
+          Keyboard: <kbd>↑</kbd> <kbd>↓</kbd> to move, <kbd>Enter</kbd> to select,
+          <kbd>Esc</kbd> to dismiss.
+        </p>
+        <p class="ac__credit" id="credit"></p>
+      </footer>
+    </main>
+
+    <script type="module" src="./autocomplete.js"></script>
+  </body>
+</html>
