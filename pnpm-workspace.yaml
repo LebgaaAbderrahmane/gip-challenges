@@ -2,3 +2,16 @@ packages:
   - 'apps/*'
   - 'services/*'
   - 'packages/*'
+
+# pnpm 11 refuses to run dependency postinstall scripts unless they are listed
+# here, and fails the install with ERR_PNPM_IGNORED_BUILDS otherwise.
+#
+# These are native modules that genuinely need their install script:
+#   esbuild  — installs its platform binary
+#   argon2   — builds the Argon2id hashing implementation (auth service)
+#
+# Nothing else is approved. Adding a dependency here is a deliberate decision,
+# not a reflex.
+onlyBuiltDependencies:
+  - esbuild
+  - argon2
