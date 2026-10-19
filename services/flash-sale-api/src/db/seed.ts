@@ -7,7 +7,7 @@
  * Running the seed is safe: it replaces the products and clears the orders,
  * which is what the demo needs between runs.
  */
-import { loadConfig } from '@gip/service-core';
+import { loadConfig, loadLocalEnv } from '@gip/service-core';
 
 import { buildApp } from '../app.ts';
 import { migrate } from './migrate.ts';
@@ -54,6 +54,8 @@ const PRODUCTS = [
 ];
 
 async function seed(): Promise<void> {
+  loadLocalEnv();
+
   const config = loadConfig(process.env, { schema: 'flash_sale', requireJwt: 'none' });
 
   await migrate({ connectionString: config.databaseUrl, schema: config.schema });

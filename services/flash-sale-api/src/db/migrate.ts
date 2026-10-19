@@ -7,7 +7,7 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { loadConfig } from '@gip/service-core';
+import { loadConfig, loadLocalEnv } from '@gip/service-core';
 import { migrate as runMigrations } from '@gip/service-core/migrate';
 
 const migrationsDir = join(
@@ -30,6 +30,8 @@ export async function migrate(options: {
 
 // Run directly: `pnpm --filter @gip/flash-sale-api migrate`
 if (process.argv[1] && process.argv[1].endsWith('migrate.ts')) {
+  loadLocalEnv();
+
   const config = loadConfig(process.env, { schema: 'flash_sale', requireJwt: 'none' });
   migrate({ connectionString: config.databaseUrl, schema: config.schema }).catch((error) => {
     console.error('[migrate] failed:', error instanceof Error ? error.message : error);

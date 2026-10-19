@@ -3,6 +3,42 @@
 What is deployed, where, and how it was configured. The live URLs are the
 ones a jury will use.
 
+## Running it locally
+
+The whole system runs on one machine, with no deployment and no account.
+
+```bash
+pnpm install
+pnpm dev:local-setup   # start the local PostgreSQL, create the schemas, write the .env files
+pnpm dev               # start all six processes
+```
+
+| | |
+|---|---|
+| Portfolio | http://localhost:5173 |
+| Calculator (standalone) | http://localhost:5174 |
+| Autocomplete (standalone) | http://localhost:5175 |
+| Lost & Found API | http://localhost:3001 |
+| Authentication API | http://localhost:3002 |
+| Flash Sale API | http://localhost:3003 |
+
+`pnpm dev:local-setup` is `pnpm db:up` followed by `pnpm db:setup:local`. The second one
+creates the three schemas and their restricted roles, writes each service's `.env`, points the
+portfolio at those services, and seeds the demo products. Every file it writes is **gitignored**:
+`services/*/.env` and `apps/portfolio/.env.local`.
+
+**Each service connects as its own role, exactly as in production.** The role's `search_path`
+points at that service's schema, so a service cannot reach another service's tables even
+locally. Connecting as the superuser `gip` instead would leave the service looking in `public`,
+where none of its tables are, and every query would fail with *relation does not exist* — a
+confusing failure, because the tables are there, in the right schema, under the right name.
+
+The services read their `.env` file themselves, using Node's built-in loader. A variable that is
+already set in the environment **wins** over the file, so the platform's variables are never
+overwritten in production, and a missing file is not an error.
+
+---
+
 ## Live services
 
 | Service | URL | Notes |

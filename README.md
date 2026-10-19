@@ -56,12 +56,31 @@ verbatim in [`docs/brief.md`](docs/brief.md) so every requirement stays traceabl
 
 ```bash
 pnpm install
-pnpm db:up          # optional: local PostgreSQL in Docker
-pnpm dev:portfolio # http://localhost:5173
+pnpm db:up           # the local PostgreSQL, in Docker
+pnpm db:setup:local  # create the schemas and write each service's .env
+pnpm dev             # everything, in parallel
 ```
 
-If `DATABASE_URL` is unset, services start an embedded PostgreSQL automatically, so Docker is
-optional.
+`pnpm dev:local-setup` is the first two commands in one. It creates the three schemas and their
+restricted roles, writes each service's `.env` (its own port, **its own role's** `DATABASE_URL`,
+and one shared `JWT_SECRET`), points the portfolio at those services, and seeds the demo
+products. Every file it writes is gitignored.
+
+`pnpm dev` then starts all six:
+
+| | |
+|---|---|
+| Portfolio | http://localhost:5173 |
+| Calculator (standalone) | http://localhost:5174 |
+| Autocomplete (standalone) | http://localhost:5175 |
+| Lost & Found API | http://localhost:3001 · [docs](http://localhost:3001/docs) |
+| Authentication API | http://localhost:3002 · [docs](http://localhost:3002/docs) |
+| Flash Sale API | http://localhost:3003 · [docs](http://localhost:3003/docs) |
+
+**Each service connects as its own role, exactly as in production.** The role's `search_path`
+points at that service's schema, so a service cannot reach another service's tables even
+locally. Connecting as the superuser `gip` instead would leave the service looking in
+`public`, where none of its tables are, and every query would fail.
 
 ### All commands
 
@@ -79,7 +98,9 @@ pnpm lint             # lint / typecheck
 pnpm build            # production build
 pnpm verify           # lint + typecheck + test + build
 
-pnpm db:up / db:down / db:reset
+pnpm db:up              # start the local PostgreSQL
+pnpm db:setup:local     # create the schemas, write the .env files, seed
+pnpm db:down / db:reset
 ```
 
 ---

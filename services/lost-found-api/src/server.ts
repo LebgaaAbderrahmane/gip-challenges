@@ -5,12 +5,19 @@
  * a missing variable fails immediately with a clear message rather than
  * halfway through its first request.
  */
-import { loadConfig } from '@gip/service-core';
+import { loadConfig, loadLocalEnv } from '@gip/service-core';
 
 import { buildApp } from './app.ts';
 import { migrate } from './db/migrate.ts';
 
 async function main(): Promise<void> {
+  /*
+   * The local .env file, if this service has one. A variable already set in
+   * the environment wins over the file, so this never overrides what the
+   * hosting platform provides.
+   */
+  loadLocalEnv();
+
   let config;
   try {
     config = loadConfig(process.env, { schema: 'lost_found', requireJwt: 'verify' });

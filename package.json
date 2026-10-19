@@ -21,6 +21,8 @@
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "db:up": "docker compose up -d postgres",
+    "db:setup:local": "node scripts/db/setup-local.mjs",
+    "dev:local-setup": "pnpm db:up && pnpm db:setup:local",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
     "db:reset": "docker compose down -v && docker compose up -d postgres",
