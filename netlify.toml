@@ -1,0 +1,47 @@
+# Netlify configuration.
+#
+# The portfolio is one workspace in a monorepo, so the build runs from the
+# repository root and publishes only the portfolio's output directory.
+#
+# Netlify reads the `packageManager` field in package.json and installs the
+# matching pnpm, so no extra setup is needed for the package manager itself.
+
+[build]
+  base = "."
+  command = "pnpm install --frozen-lockfile && pnpm --filter @gip/portfolio build"
+  publish = "apps/portfolio/dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # The portfolio needs no database or secrets to build.
+  NODE_ENV = "production"
+
+# The portfolio is a single-page application, so every path must serve
+# index.html and let the router handle it. Without this, a direct visit to
+# /tasks/flash-sale returns a 404 from the host.
+#
+# The same rule is also in apps/portfolio/public/_redirects, which Vite copies
+# into the published output. That copy is what makes the fallback work no
+# matter which directory Netlify reads its configuration from — the first
+# deploy 404'd on every route because netlify.toml had not been committed.
+
+# The demo assets are copied into the portfolio's public directory at build
+# time. They are content-hashed by nothing, so they are given a long cache
+# lifetime — the file name carries no version, so this relies on Netlify
+# re-deploying with a new URL for the whole site.
+[[headers]]
+  for = "/demos/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"

@@ -1,0 +1,11 @@
+# SPA fallback for the Netlify host.
+#
+# The portfolio is a single-page application: the router handles the path, so
+# every route must serve index.html. Without this, a direct visit to
+# /tasks/flash-sale returns a host-level 404.
+#
+# This file lives in the portfolio's public directory, so Vite copies it into
+# the published output. That makes it independent of where netlify.toml is
+# found, which matters because the build runs from the repository root.
+
+/*    /index.html   200
