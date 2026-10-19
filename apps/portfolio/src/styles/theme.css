@@ -18,7 +18,13 @@
 
   --color-text: #f4f4f5;
   --color-text-muted: #a1a1aa;
-  --color-text-subtle: #71717a;
+  /*
+   * The subtle colour was #71717a, which gives only 3.9:1 against the page
+   * background and 3.1:1 against a raised panel. Small text needs 4.5:1, so
+   * this is #94949c, which clears 4.5:1 against the page, a panel, a raised
+   * panel and the hover state.
+   */
+  --color-text-subtle: #94949c;
 
   --color-border: #303442;
   --color-border-strong: #3d4256;

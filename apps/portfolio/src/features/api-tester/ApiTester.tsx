@@ -253,7 +253,10 @@ export default function ApiTester({
                   : 'border-border text-text-muted hover:border-border-strong hover:text-text',
               ].join(' ')}
             >
-              <span className="mr-2 font-mono text-xs opacity-70">{op.method}</span>
+              {/* No opacity here: it reduced the contrast of the label
+                  against the background it sat on, and the labels are
+                  already distinguished by colour. */}
+              <span className="mr-2 font-mono text-xs text-text-muted">{op.method}</span>
               {op.label}
             </button>
           ))}

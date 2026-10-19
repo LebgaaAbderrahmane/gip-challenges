@@ -284,7 +284,9 @@ export default function DemoFrame({
           href={`${GITHUB_URL}/tree/main/apps/${name}`}
           target="_blank"
           rel="noreferrer noopener"
-          className="text-accent hover:underline"
+          // Underlined, because a link inside a sentence has to be
+          // distinguishable without relying on colour alone.
+          className="text-accent underline underline-offset-2 hover:text-accent-strong"
         >
           apps/{name}
         </a>{' '}

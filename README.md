@@ -1,5 +1,7 @@
 # GIP Challenges — Engineering Portfolio
 
+[![CI](https://github.com/LebgaaAbderrahmane/gip-challenges/actions/workflows/ci.yml/badge.svg)](https://github.com/LebgaaAbderrahmane/gip-challenges/actions/workflows/ci.yml)
+
 Seven challenges from a single brief, built as one working engineering portfolio: three real
 deployed backend APIs, two vanilla-JavaScript frontends, and two algorithm implementations.
 
