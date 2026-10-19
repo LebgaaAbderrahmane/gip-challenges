@@ -22,6 +22,13 @@ const outRoot = join(root, 'apps', 'portfolio', 'public', 'demos');
 
 const SOURCE_FILES = /\.(html|css|js|mjs|json|svg|png|ico|webmanifest)$/;
 
+/**
+ * Tooling that lives in the app folder but must never reach the browser.
+ * Shipping these would be harmless but sloppy — a vitest.config.js served to a
+ * visitor is a sign the copy filter is too loose.
+ */
+const EXCLUDED = new Set(['package.json', 'vitest.config.js', 'build.mjs', 'vite.config.js']);
+
 async function sync() {
   await rm(outRoot, { recursive: true, force: true });
   await mkdir(outRoot, { recursive: true });
@@ -39,7 +46,8 @@ async function sync() {
     const entries = await readdir(src, { withFileTypes: true });
     for (const entry of entries) {
       if (!entry.isFile() || !SOURCE_FILES.test(entry.name)) continue;
-      if (entry.name === 'package.json') continue;
+      if (EXCLUDED.has(entry.name)) continue;
+      if (/\.(test|spec)\.[cm]?js$/.test(entry.name)) continue;
       await cp(join(src, entry.name), join(dest, entry.name));
     }
     console.log(`[sync-demos] ${demo} -> public/demos/${demo}`);

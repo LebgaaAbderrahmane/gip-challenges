@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>Calculator — vanilla JavaScript</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="calc">
+      <h1 class="calc__title">Calculator</h1>
+
+      <!-- Screen. aria-live announces results to assistive technology. -->
+      <div class="screen">
+        <p id="expression" class="screen__expression">&nbsp;</p>
+        <output id="result" class="screen__result" for="keypad" aria-live="polite">0</output>
+        <p id="error" class="screen__error" role="alert"></p>
+      </div>
+
+      <!-- Buttons carry data-key so one handler drives both clicks and keys. -->
+      <div id="keypad" class="keypad" role="group" aria-label="Calculator keypad">
+        <button type="button" class="key key--util" data-key="clear">AC</button>
+        <button type="button" class="key key--util" data-key="backspace" aria-label="Backspace">
+          ⌫
+        </button>
+        <button type="button" class="key key--util" data-key="(">(</button>
+        <button type="button" class="key key--util" data-key=")">)</button>
+
+        <button type="button" class="key" data-key="7">7</button>
+        <button type="button" class="key" data-key="8">8</button>
+        <button type="button" class="key" data-key="9">9</button>
+        <button type="button" class="key key--op" data-key="/">÷</button>
+
+        <button type="button" class="key" data-key="4">4</button>
+        <button type="button" class="key" data-key="5">5</button>
+        <button type="button" class="key" data-key="6">6</button>
+        <button type="button" class="key key--op" data-key="*">×</button>
+
+        <button type="button" class="key" data-key="1">1</button>
+        <button type="button" class="key" data-key="2">2</button>
+        <button type="button" class="key" data-key="3">3</button>
+        <button type="button" class="key key--op" data-key="-">−</button>
+
+        <button type="button" class="key" data-key="0">0</button>
+        <button type="button" class="key" data-key=".">.</button>
+        <button type="button" class="key key--op" data-key="+">+</button>
+        <button type="button" class="key key--equals" data-key="equals">=</button>
+      </div>
+
+      <p class="calc__hint">
+        Keyboard: digits, <code>+ - * /</code>, <code>.</code>, <code>(</code> <code>)</code>,
+        <kbd>Enter</kbd> to evaluate, <kbd>Backspace</kbd> to delete,
+        <kbd>Esc</kbd> to clear.
+      </p>
+    </main>
+
+    <script type="module" src="./calculator.js"></script>
+  </body>
+</html>

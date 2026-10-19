@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 
+import DemoFrame from '@/components/DemoFrame';
 import StatusBadge from '@/components/StatusBadge';
 import { getTaskBySlug } from '@/data/tasks';
 import BinaryStringDemo from '@/features/algorithms/BinaryStringDemo';
@@ -12,6 +13,12 @@ const GITHUB_URL = 'https://github.com/LebgaaAbderrahmane/gip-challenges';
 const DEMOS: Record<string, React.ComponentType> = {
   'binary-string': BinaryStringDemo,
   'missing-positive': SmallestMissingPositiveDemo,
+};
+
+/** Vanilla demos embedded as static iframes, keyed by task slug. */
+const IFRAME_DEMOS: Record<string, { name: string; src: string }> = {
+  calculator: { name: 'calculator', src: '/demos/calculator/index.html' },
+  autocomplete: { name: 'autocomplete', src: '/demos/autocomplete/index.html' },
 };
 
 /**
@@ -31,6 +38,7 @@ export default function TaskPage() {
   if (!task) return <NotFoundPage />;
 
   const Demo = slug ? DEMOS[slug] : undefined;
+  const iframeDemo = slug ? IFRAME_DEMOS[slug] : undefined;
   const sourcePath = `apps/${['calculator', 'autocomplete'].includes(task.slug) ? task.slug : 'portfolio'}`;
 
   return (
@@ -91,6 +99,10 @@ export default function TaskPage() {
           className="mt-8 rounded-xl border border-border bg-surface/40 p-5 sm:p-6"
         >
           <Demo />
+        </section>
+      ) : iframeDemo ? (
+        <section aria-label="Interactive demo" className="mt-8">
+          <DemoFrame name={iframeDemo.name} src={iframeDemo.src} />
         </section>
       ) : (
         <section

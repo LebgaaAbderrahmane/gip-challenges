@@ -27,12 +27,21 @@ const appDir = resolve(process.cwd());
 const FORBIDDEN = [
   { re: /\beval\s*\(/, why: 'eval() is banned — use the recursive-descent parser' },
   { re: /\bnew\s+Function\s*\(/, why: 'new Function() is equivalent to eval()' },
-  { re: /from\s+['"]react['"]|require\(['"]react['"]\)/, why: 'React is not allowed' },
+  { re: /(?:from|import)\s+['"]react['"]|require\(\s*['"]react['"]\s*\)/, why: 'React is not allowed' },
   {
-    re: /from\s+['"](vue|angular|svelte|preact|solid-js)['"]/,
+    re: /(?:from|import)\s+['"](vue|angular|svelte|preact|solid-js)['"]/,
     why: 'no UI framework is allowed',
   },
 ];
+
+/**
+ * Strips comments before scanning.
+ *
+ * Without this, prose *describing* the ban ("this never calls eval()") trips
+ * the very check that enforces it. Only executable code should be inspected.
+ */
+const stripComments = (source) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 const missing = [];
 for (const file of required) {
@@ -57,7 +66,7 @@ const violations = [];
 for (const entry of entries) {
   if (!entry.isFile() || !/\.(js|mjs)$/.test(entry.name)) continue;
 
-  const source = await readFile(join(appDir, entry.name), 'utf8');
+  const source = stripComments(await readFile(join(appDir, entry.name), 'utf8'));
   for (const { re, why } of FORBIDDEN) {
     if (re.test(source)) {
       violations.push(`${entry.name}: matches ${re} — ${why}`);

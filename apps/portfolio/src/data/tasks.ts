@@ -69,7 +69,7 @@ export const TASKS: Task[] = [
       'No expression-evaluation library',
     ],
     constraintsAreMandatory: true,
-    status: 'planned',
+    status: 'implemented',
     hasApi: false,
   },
   {
