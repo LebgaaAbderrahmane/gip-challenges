@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 
 import ApiTester from '@/features/api-tester/ApiTester';
+import { SessionProvider } from '@/features/session/SessionContext';
 import type { ApiService } from '@/features/api-tester/types.ts';
 
 const service: ApiService = {
@@ -52,7 +54,13 @@ beforeEach(() => {
 describe('ApiTester', () => {
   it('starts idle, with the send button enabled', () => {
     stubFetch({});
-    render(<ApiTester service={service} />);
+    render(
+      <SessionProvider>
+        <MemoryRouter>
+          <ApiTester service={service} />
+        </MemoryRouter>
+      </SessionProvider>,
+    );
 
     const button = screen.getByRole('button', { name: /send request/i });
     expect(button).toBeEnabled();
@@ -63,7 +71,13 @@ describe('ApiTester', () => {
     const user = userEvent.setup();
     const mock = stubFetch({ data: [{ id: '1' }] });
 
-    render(<ApiTester service={service} />);
+    render(
+      <SessionProvider>
+        <MemoryRouter>
+          <ApiTester service={service} />
+        </MemoryRouter>
+      </SessionProvider>,
+    );
     await user.click(screen.getByRole('button', { name: /send request/i }));
 
     await waitFor(() => expect(screen.getByText(/200 OK/)).toBeInTheDocument());
@@ -81,7 +95,13 @@ describe('ApiTester', () => {
       { status: 404, ok: false, statusText: 'Not Found' },
     );
 
-    render(<ApiTester service={service} />);
+    render(
+      <SessionProvider>
+        <MemoryRouter>
+          <ApiTester service={service} />
+        </MemoryRouter>
+      </SessionProvider>,
+    );
     await user.click(screen.getByRole('button', { name: /send request/i }));
 
     await waitFor(() => expect(screen.getByText(/404 Not Found/)).toBeInTheDocument());
@@ -92,11 +112,21 @@ describe('ApiTester', () => {
     const user = userEvent.setup();
     const mock = stubFetch({});
 
-    render(<ApiTester service={service} />);
+    render(
+      <SessionProvider>
+        <MemoryRouter>
+          <ApiTester service={service} />
+        </MemoryRouter>
+      </SessionProvider>,
+    );
     await user.click(screen.getByRole('button', { name: /create a thing/i }));
     await user.click(screen.getByRole('button', { name: /send request/i }));
 
-    await waitFor(() => expect(screen.getByText(/needs a bearer token/i)).toBeInTheDocument());
+    // The message appears twice by design: as a hint before sending, and in
+    // the failure panel afterwards.
+    await waitFor(() =>
+      expect(screen.getAllByText(/needs a bearer token/i).length).toBeGreaterThan(0),
+    );
     expect(mock).not.toHaveBeenCalled();
   });
 
@@ -104,7 +134,13 @@ describe('ApiTester', () => {
     const user = userEvent.setup();
     const mock = stubFetch({ token: 'abc' });
 
-    render(<ApiTester service={service} />);
+    render(
+      <SessionProvider>
+        <MemoryRouter>
+          <ApiTester service={service} />
+        </MemoryRouter>
+      </SessionProvider>,
+    );
     await user.click(screen.getByRole('button', { name: /create a thing/i }));
 
     const tokenField = screen.getByLabelText(/bearer token/i);
@@ -120,7 +156,13 @@ describe('ApiTester', () => {
     const user = userEvent.setup();
     globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch')) as never;
 
-    render(<ApiTester service={service} />);
+    render(
+      <SessionProvider>
+        <MemoryRouter>
+          <ApiTester service={service} />
+        </MemoryRouter>
+      </SessionProvider>,
+    );
     await user.click(screen.getByRole('button', { name: /send request/i }));
 
     await waitFor(() =>
@@ -134,7 +176,13 @@ describe('ApiTester', () => {
     const user = userEvent.setup();
     const mock = stubFetch({});
 
-    render(<ApiTester service={service} />);
+    render(
+      <SessionProvider>
+        <MemoryRouter>
+          <ApiTester service={service} />
+        </MemoryRouter>
+      </SessionProvider>,
+    );
     await user.click(screen.getByRole('button', { name: /create a thing/i }));
 
     const area = screen.getByLabelText(/request body/i);
@@ -157,7 +205,13 @@ describe('ApiTester', () => {
     });
 
     stubFetch({});
-    render(<ApiTester service={service} />);
+    render(
+      <SessionProvider>
+        <MemoryRouter>
+          <ApiTester service={service} />
+        </MemoryRouter>
+      </SessionProvider>,
+    );
     await user.click(screen.getByRole('button', { name: /copy as curl/i }));
 
     await waitFor(() => expect(writeText).toHaveBeenCalled());

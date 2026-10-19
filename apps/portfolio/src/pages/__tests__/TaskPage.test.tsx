@@ -3,16 +3,19 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import TaskPage from '@/pages/TaskPage';
+import { SessionProvider } from '@/features/session/SessionContext';
 import { TASK_CONTENT } from '@/data/taskContent';
 import { TASKS } from '@/data/tasks';
 
 const renderAt = (slug: string) =>
   render(
-    <MemoryRouter initialEntries={[`/tasks/${slug}`]}>
-      <Routes>
-        <Route path="/tasks/:slug" element={<TaskPage />} />
-      </Routes>
-    </MemoryRouter>,
+    <SessionProvider>
+      <MemoryRouter initialEntries={[`/tasks/${slug}`]}>
+        <Routes>
+          <Route path="/tasks/:slug" element={<TaskPage />} />
+        </Routes>
+      </MemoryRouter>
+    </SessionProvider>,
   );
 
 /** Slugs that have finished content sections wired up. */
@@ -33,11 +36,11 @@ describe('TaskPage content sections', () => {
     expect(screen.getByText(new RegExp(`\\b${count} tests\\b`))).toBeInTheDocument();
   });
 
-  it('shows an honest placeholder for tasks without content yet', () => {
-    const notDone = TASKS.find((t) => !TASK_CONTENT[t.slug]);
-    expect(notDone).toBeDefined();
-    renderAt(notDone!.slug);
-    expect(screen.getByText(/added when it is implemented/i)).toBeInTheDocument();
+  it('has a write-up for every challenge', () => {
+    // Every challenge now has content, so nothing shows the placeholder.
+    for (const task of TASKS) {
+      expect(TASK_CONTENT[task.slug]).toBeDefined();
+    }
   });
 
   it('embeds the calculator as an iframe pointing at the static demo', () => {

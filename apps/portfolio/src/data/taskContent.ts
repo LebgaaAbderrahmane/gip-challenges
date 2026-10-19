@@ -156,6 +156,63 @@ export const TASK_CONTENT: Record<string, TaskContent> = {
     ],
   },
 
+  'flash-sale': {
+    howItWorks: [
+      {
+        heading: 'The reservation is one statement, not two',
+        body: 'Reading the stock and then writing it is not safe: two requests can both read the same stock and both conclude there is enough. The reservation is a single conditional UPDATE, so the database evaluates the check and the update together and two requests can never both take the last unit.',
+      },
+      {
+        heading: 'A unique constraint, not a check-then-insert',
+        body: 'The client may time out after an order succeeded and retry. The guarantee is a UNIQUE index on (customer_id, idempotency_key), so the second attempt is rejected by the database. An application-level "does this key already exist?" check would still race, because two requests can both find that it does not.',
+      },
+      {
+        heading: 'The subtle part: reading after a rollback',
+        body: 'When the insert is rejected the transaction is aborted, and an aborted transaction cannot see the row the other transaction created — it is not committed yet. So the order is read in a fresh transaction, and the read is retried briefly if the other transaction has not committed. Reading it inside the aborted transaction is the classic mistake, and it produces either a 500 or a second order.',
+      },
+      {
+        heading: 'A reused key with a different payload is a conflict',
+        body: 'The order stores a fingerprint of the request\u2019s semantic fields \u2014 the product and the quantity. Headers are excluded on purpose: the same logical request can arrive with a different User-Agent, and that must still count as a retry.',
+      },
+      {
+        heading: 'Money is whole cents',
+        body: 'Prices are stored as a BIGINT in cents, never a float, so the arithmetic is exact. The order records the unit price as well as the total, so a later price change cannot alter an order that has already been placed.',
+      },
+    ],
+    complexity: [
+      { measure: 'Endpoints', value: '5 \u2014 products, product, place order, orders, order' },
+      { measure: 'Tests', value: '27, including 50 simultaneous requests' },
+      { measure: 'Money', value: 'Integer cents \u2014 never a float' },
+      { measure: 'Guarantee', value: 'A UNIQUE index, enforced by the database' },
+    ],
+    edgeCases: [
+      { input: '50 simultaneous orders, 10 in stock', result: '10 created, 40 refused', note: 'Stock ends at 0, never below' },
+      { input: 'The same key retried 10 times at once', result: '1 order', note: 'One distinct id, one decrement' },
+      { input: 'The same key, a different quantity', result: '409', note: 'No extra order, no extra stock taken' },
+      { input: 'A quantity larger than the stock', result: '409', note: 'The stock is untouched' },
+      { input: 'An unknown product', result: '404', note: 'No order is created' },
+      { input: 'No Idempotency-Key header', result: '400', note: 'A retry could create a second order' },
+      { input: 'The same key, two different customers', result: 'Both succeed', note: 'The key is scoped to the customer' },
+    ],
+    tests: {
+      total: 27,
+      command: 'pnpm --filter @gip/flash-sale-api test',
+      highlights: [
+        'Scenario A: 50 genuinely simultaneous requests against 10 units \u2014 exactly 10 succeed, 40 are refused, and the stock never goes negative',
+        'Scenario B: one logical order retried 10 times at once \u2014 exactly one order, one distinct id, and exactly one decrement',
+        'Scenario C: the same key with a different payload \u2014 a 409, with no extra order and no extra stock taken',
+        'Scenario D: the order write is rejected after the stock was reserved \u2014 the rollback restores the stock exactly',
+        'The price is stored in whole cents, and the total is exact',
+        'Verified over real HTTP against the hosted database: the same three results, with a final stock of 0',
+      ],
+    },
+    notes: [
+      'An order holds a single product. A cart would need a different order model.',
+      'There is no payment and no cancellation. An order is a record of a purchase, not a transaction with a payment provider.',
+      'Without a token the API accepts a clearly-named demo customer from the X-Demo-Customer header. It is a convenience for the public demo and is not a verified identity.',
+    ],
+  },
+
   calculator: {
     howItWorks: [
       {

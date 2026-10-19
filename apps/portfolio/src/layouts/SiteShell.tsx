@@ -55,6 +55,9 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
           </Link>
 
           <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
+            <NavLink to="/evaluate" className={navLinkClass}>
+              How to evaluate
+            </NavLink>
             <NavLink to="/tasks" className={navLinkClass}>
               Challenges
             </NavLink>
@@ -89,6 +92,9 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
             className="border-t border-border bg-surface md:hidden"
           >
             <div className="container-page flex flex-col py-2">
+              <NavLink to="/evaluate" className={navLinkClass}>
+                How to evaluate
+              </NavLink>
               <NavLink to="/tasks" className={navLinkClass}>
                 Challenges
               </NavLink>

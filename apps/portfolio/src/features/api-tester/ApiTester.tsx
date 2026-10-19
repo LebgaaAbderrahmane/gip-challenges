@@ -1,6 +1,20 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { isDeployed, REQUEST_TIMEOUT_MS } from '@/config/api';
+import { useSession } from '@/features/session/SessionContext';
+import { findCopyables, type Copyable } from './copyables';
+
+/**
+ * The other services a token can be used on.
+ *
+ * The three services share one signing secret, so a token issued by one is
+ * accepted by the others. This is where that becomes useful.
+ */
+const TOKEN_DESTINATIONS: { href: string; label: string }[] = [
+  { href: '/tasks/lost-found', label: 'Lost & Found API' },
+  { href: '/tasks/flash-sale', label: 'Flash Sale API' },
+];
 import type { ApiOperation, ApiService, RequestOutcome } from './types.ts';
 
 /**
@@ -28,9 +42,21 @@ export default function ApiTester({
   );
   const [parameters, setParameters] = useState<Record<string, string>>({});
   const [bodyText, setBodyText] = useState('');
-  const [token, setToken] = useState('');
+  const session = useSession();
+  const [localToken, setLocalToken] = useState('');
   const [outcome, setOutcome] = useState<RequestOutcome>({ kind: 'idle' });
   const [copied, setCopied] = useState<string | null>(null);
+  const [copyables, setCopyables] = useState<Copyable[]>([]);
+
+  /**
+   * The token to send.
+   *
+   * The session wins when there is one: a visitor who signed in on the
+   * Authentication API should not have to paste the token again to use it
+   * here. A token typed into this panel still works, and takes precedence
+   * over the session, so a visitor can test with a different user.
+   */
+  const token = localToken.trim() || session.token || '';
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -44,6 +70,7 @@ export default function ApiTester({
     setParameters({});
     setBodyText(op.body === undefined ? '' : JSON.stringify(op.body, null, 2));
     setOutcome({ kind: 'idle' });
+    setCopyables([]);
   };
 
   const copy = async (text: string, key: string) => {
@@ -157,6 +184,22 @@ export default function ApiTester({
         rawBody,
         headers: responseHeaders,
       });
+
+      /*
+       * A response that carries a token signs the visitor in for the rest of
+       * the portfolio. The three services share one signing secret, so the
+       * token that the Authentication API just issued is valid on the other
+       * two — and that is the design, made visible.
+       */
+      const issued = (parsed as { token?: unknown } | null)?.token;
+      if (typeof issued === 'string' && issued !== '') {
+        const user = (parsed as { user?: { email?: unknown } } | null)?.user;
+        const email = typeof user?.email === 'string' ? user.email : 'signed in';
+        session.signIn(issued, email);
+      }
+
+      // Offer the parts of the response that are actually worth copying.
+      setCopyables(findCopyables(parsed, { isOrder: operation.id === 'order' }));
     } catch (error) {
       const durationMs = Math.round(performance.now() - started);
 
@@ -303,24 +346,44 @@ export default function ApiTester({
         )}
 
         {operation.requiresAuth && (
-          <label className="block text-xs">
-            <span className="mb-1 block text-text-subtle">
-              Bearer token — get one from the Authentication API
-            </span>
+          <div className="rounded-lg border border-border bg-bg p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-medium text-text-muted">Bearer token</span>
+              {session.token && !localToken.trim() && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-success/40 bg-success-muted px-2.5 py-0.5 text-xs text-success">
+                  <span aria-hidden="true">✓</span>
+                  Signed in as {session.email}
+                </span>
+              )}
+            </div>
+
             <input
               type="password"
               value={token}
-              onChange={(event) => setToken(event.target.value)}
+              onChange={(event) => setLocalToken(event.target.value)}
               placeholder="eyJhbGciOiJIUzI1NiJ9…"
               autoComplete="off"
               spellCheck={false}
-              className="w-full rounded-md border border-border bg-bg px-3 py-2 font-mono text-sm text-text focus-visible:border-accent"
+              aria-label="Bearer token"
+              className="mt-2 w-full rounded-md border border-border bg-surface px-3 py-2 font-mono text-sm text-text focus-visible:border-accent"
             />
-            <span className="mt-1 block text-text-subtle">
-              Kept in this tab only. It is never stored and never sent anywhere except
-              the API being tested.
-            </span>
-          </label>
+
+            <p className="mt-2 text-xs text-text-subtle">
+              {session.token
+                ? 'The token from the Authentication API is used automatically. Paste one here to override it.'
+                : 'Sign in on the Authentication API and it will be used here. Otherwise paste a token.'}
+            </p>
+
+            {!session.token && !localToken.trim() && (
+              <p className="mt-2 rounded-md border border-warning/40 bg-warning-muted px-3 py-2 text-xs text-warning">
+                This operation needs a bearer token.{' '}
+                <Link to="/tasks/auth" className="font-medium underline underline-offset-2">
+                  Sign in on the Authentication API
+                </Link>{' '}
+                and it will be used here.
+              </p>
+            )}
+          </div>
         )}
 
         {operation.method !== 'GET' && operation.body !== undefined && (
@@ -334,6 +397,27 @@ export default function ApiTester({
               className="w-full resize-y rounded-md border border-border bg-bg px-3 py-2 font-mono text-sm text-text focus-visible:border-accent"
             />
           </label>
+        )}
+
+        {/*
+          The three services share one signing secret, so this token is already
+          valid on the other two. The links are here so following it is one
+          click rather than a copy and a paste. Shown whenever a token exists,
+          including on the sign-in operation itself.
+        */}
+        {token.trim() && (
+          <p className="flex flex-wrap items-center gap-2 text-xs text-text-subtle">
+            <span>Use this token on</span>
+            {TOKEN_DESTINATIONS.map((destination) => (
+              <Link
+                key={destination.href}
+                to={destination.href}
+                className="rounded-md border border-border px-2 py-1 font-medium text-accent transition-colors hover:border-border-strong hover:bg-surface-elevated"
+              >
+                {destination.label} →
+              </Link>
+            ))}
+          </p>
         )}
 
         <div className="flex flex-wrap items-center gap-3">
@@ -461,6 +545,43 @@ export default function ApiTester({
                   .map(([key, value]) => `${key}: ${value}`)
                   .join('  ·  ')}
               </p>
+            )}
+
+            {/*
+              The parts of the response that are actually worth taking away:
+              the token that was just issued, the id of the row that was just
+              created. A generic "copy response" leaves the visitor to dig
+              for them.
+            */}
+            {copyables.length > 0 && (
+              <div className="mt-4 border-t border-border pt-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-text-subtle">
+                  Worth keeping
+                </p>
+                <ul className="mt-2 flex flex-wrap gap-2">
+                  {copyables.map((item) => (
+                    <li key={`${item.label}-${item.value}`}>
+                      <button
+                        type="button"
+                        onClick={() => copy(item.value, `${item.label}-${item.value}`)}
+                        title={item.note ?? item.value}
+                        className="rounded-md border border-border px-2.5 py-1.5 text-left transition-colors hover:border-border-strong hover:bg-surface-elevated"
+                      >
+                        <span className="block text-xs font-medium text-accent">
+                          {copied === `${item.label}-${item.value}`
+                            ? 'Copied'
+                            : `Copy ${item.label}`}
+                        </span>
+                        {item.note && (
+                          <span className="mt-0.5 block max-w-[16rem] truncate text-[11px] text-text-subtle">
+                            {item.note}
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         )}

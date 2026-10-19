@@ -102,12 +102,48 @@ export default function TaskPage() {
           <dd className="text-text">{task.hasApi ? 'Deployed HTTP API' : 'Client-side only'}</dd>
         </div>
         <div>
-          <dt className="text-text-subtle">Brief constraints</dt>
-          <dd className="text-text">
-            {task.constraintsAreMandatory ? 'Mandated' : 'Not mandated — our choice'}
-          </dd>
+          <dt className="text-text-subtle">Backed by</dt>
+          <dd className="text-text">{task.hasApi ? 'Deployed HTTP API' : 'Client-side only'}</dd>
         </div>
       </dl>
+
+      {/*
+        The requirements the brief imposes, and the rules we added, as two
+        clearly separate groups. A juror should be able to tell which of the
+        two they are looking at, and nothing of ours should ever look like
+        something the brief demanded.
+      */}
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <h2 className="text-sm font-semibold">From the brief</h2>
+          <ul className="mt-2 space-y-1.5">
+            {task.briefRequirements.map((requirement) => (
+              <li key={requirement} className="flex gap-2 text-sm text-text-muted">
+                <span aria-hidden="true" className="mt-2 h-1 w-1 shrink-0 rounded-full bg-accent" />
+                <span>{requirement}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <h2 className="text-sm font-semibold">Our own choices</h2>
+          {task.ourChoices.length > 0 ? (
+            <ul className="mt-2 space-y-1.5">
+              {task.ourChoices.map((choice) => (
+                <li key={choice} className="flex gap-2 text-sm text-text-muted">
+                  <span aria-hidden="true" className="mt-2 h-1 w-1 shrink-0 rounded-full bg-text-subtle" />
+                  <span>{choice}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-text-muted">
+              Nothing beyond the brief&rsquo;s own requirements.
+            </p>
+          )}
+        </div>
+      </div>
 
       {/* 4 — Interactive demo */}
       {slug === 'flash-sale' ? (

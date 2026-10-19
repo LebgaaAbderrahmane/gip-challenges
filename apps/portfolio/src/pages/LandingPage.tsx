@@ -28,6 +28,11 @@ const highlights = [
 
 const documents = [
   {
+    label: 'How to evaluate this',
+    description: 'What the brief asked, where to see it, and what to look for',
+    href: '/evaluate',
+  },
+  {
     label: 'README',
     description: 'Setup, commands, architecture and the known caveats',
     href: `${GITHUB_URL}#readme`,
@@ -76,8 +81,14 @@ export default function LandingPage() {
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
-              to="/tasks"
+              to="/evaluate"
               className="rounded-lg bg-accent px-5 py-2.5 font-medium text-bg transition-colors hover:bg-accent-strong"
+            >
+              How to evaluate this
+            </Link>
+            <Link
+              to="/tasks"
+              className="rounded-lg border border-border px-5 py-2.5 font-medium transition-colors hover:border-border-strong hover:bg-surface"
             >
               Explore challenges
             </Link>
