@@ -86,9 +86,9 @@ library doing the work.
 
 ### gip-05 — Authentication API
 
-**Try this:** create an account from the page. The password must be at least 12 characters. The
-response carries a token; the portfolio keeps it **in memory only** and offers to reuse it on the
-other two services.
+**Try this:** create an account from the page, then sign in. The password must be at least 12
+characters. The sign-in response carries a token; the portfolio keeps it **in memory only** and
+offers to reuse it on the other two services — so you never paste it by hand.
 
 **What good looks like:** the password is hashed with Argon2id and never returned or stored in
 plain text. Signing in with the wrong password and signing in with an account that does not
@@ -128,9 +128,22 @@ Content-Type: application/json
 { "email": "you@example.com", "password": "at-least-12-characters" }
 ```
 
-The response contains a token that is valid for **15 minutes**. It is also accepted by the other
+Signing up creates the account and returns it — `id`, `email` and `createdAt`, and **no token**.
+The token comes from signing in:
+
+```
+POST https://gip-auth-api.onrender.com/api/auth/login
+Content-Type: application/json
+
+{ "email": "you@example.com", "password": "at-least-12-characters" }
+```
+
+That response carries a token that is valid for **15 minutes**. It is also accepted by the other
 two services, because all three share one signing secret — the portfolio's **session** feature
 does exactly that, which is the clearest demonstration of the design.
+
+Signing up and signing in are two steps on purpose: creating an account and being handed a
+credential are different acts, and only one of them should produce a token.
 
 > Sign-in and sign-up are rate limited to **10 requests per minute** per client. A failure is a
 > `429`, and the response says so.
