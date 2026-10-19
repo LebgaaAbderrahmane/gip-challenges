@@ -53,6 +53,10 @@ body {
  * own content and the surrounding page never scrolls inside it.
  */
 html:not(.is-embedded) body {
+  /* `vh` first as a fallback: a browser that does not understand `dvh`
+     rejects the second declaration and keeps the first, so the page still
+     fills the viewport rather than silently collapsing. */
+  min-height: 100vh;
   min-height: 100dvh;
 }
 

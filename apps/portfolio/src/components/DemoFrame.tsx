@@ -2,7 +2,35 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 const GITHUB_URL = 'https://github.com/LebgaaAbderrahmane/gip-challenges';
 
-/** Keys forwarded from the parent page into the demo. */
+/**
+ * Physical-key codes we forward on keyboards where `event.key` is not the
+ * character the key produces.
+ *
+ * `event.key` is layout-dependent: the key labelled "1" reports "&" on AZERTY
+ * and "1" on QWERTY. Filtering only on `event.key` dropped every number on a
+ * French/Arabic layout while symbols — identical across layouts — kept
+ * working. `event.code` names the physical key and is stable everywhere.
+ */
+const FORWARDABLE_CODES = new Set([
+  ...'0123456789'.split('').map((d) => `Digit${d}`),
+  ...'0123456789'.split('').map((d) => `Numpad${d}`),
+  'Period',
+  'NumpadDecimal',
+  'Equal',
+  'NumpadAdd',
+  'Minus',
+  'NumpadSubtract',
+  'Slash',
+  'NumpadDivide',
+  'NumpadMultiply',
+  'Enter',
+  'NumpadEnter',
+  'Backspace',
+  'Escape',
+  'Delete',
+]);
+
+/** Keys forwarded when they already mean the right thing on any layout. */
 const FORWARDED_KEYS = new Set([
   ...'0123456789.+-*/()'.split(''),
   'Enter',
@@ -11,14 +39,6 @@ const FORWARDED_KEYS = new Set([
   'Escape',
   'Delete',
 ]);
-
-const KEY_CODES: Record<string, { code: string }> = {
-  Enter: { code: 'Enter' },
-  '=': { code: 'Equal' },
-  Backspace: { code: 'Backspace' },
-  Escape: { code: 'Escape' },
-  Delete: { code: 'Delete' },
-};
 
 /**
  * True when the event originated inside the demo frame rather than the parent.
@@ -138,7 +158,10 @@ export default function DemoFrame({
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
-      if (!FORWARDED_KEYS.has(event.key)) return;
+
+      // Accept the key if EITHER the character or the physical key is one we
+      // handle, so non-QWERTY layouts are not silently dropped.
+      if (!FORWARDED_KEYS.has(event.key) && !FORWARDABLE_CODES.has(event.code)) return;
 
       const frame = frameRef.current;
       if (!frame || cameFromDemo(event, frame)) return;
@@ -154,14 +177,15 @@ export default function DemoFrame({
       const view = frame.contentWindow as (Window & typeof globalThis) | null;
       if (!view) return;
 
-      const { code } = KEY_CODES[event.key] ?? { code: `Digit${event.key}` };
-
-      // Built with the FRAME's constructor: an instance from the parent realm
-      // is not accepted by a listener inside the frame.
+      // Both properties are passed through untouched. `code` is the physical
+      // key and is what makes non-QWERTY layouts work; `key` preserves
+      // shift-modified characters such as "+". The demo resolves the pair.
+      // Deriving `code` from `key` here would reintroduce the exact bug this
+      // fix exists to remove (an AZERTY "&" would become "Digit&").
       view.document.dispatchEvent(
         new view.KeyboardEvent('keydown', {
           key: event.key,
-          code,
+          code: event.code,
           bubbles: true,
           cancelable: true,
         }),

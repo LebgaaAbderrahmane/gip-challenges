@@ -149,15 +149,68 @@ keypadEl.addEventListener('click', (event) => {
   handleKey(button.dataset.key);
 });
 
-/** Map a browser KeyboardEvent to a calculator action. */
+/**
+ * Physical-key mapping, used when `event.key` is not already a literal.
+ *
+ * `event.key` describes the CHARACTER a layout produces, so the physical key
+ * labelled "1" reports "&" on AZERTY and "1" on QWERTY. `event.code` describes
+ * the KEY ITSELF and is identical on every layout.
+ *
+ * Measured before this existed: on a French/Arabic layout every symbol worked
+ * but no number did, because "&", "é", "\"", "'", "(", "-", "è", "_", "ç", "à"
+ * matched nothing while "+" and "*" — the same on every layout — did.
+ */
+const CODE_TO_KEY = {
+  Digit0: '0', Digit1: '1', Digit2: '2', Digit3: '3', Digit4: '4',
+  Digit5: '5', Digit6: '6', Digit7: '7', Digit8: '8', Digit9: '9',
+  Numpad0: '0', Numpad1: '1', Numpad2: '2', Numpad3: '3', Numpad4: '4',
+  Numpad5: '5', Numpad6: '6', Numpad7: '7', Numpad8: '8', Numpad9: '9',
+  Period: '.', NumpadDecimal: '.',
+  Equal: '+', NumpadAdd: '+',
+  Minus: '-', NumpadSubtract: '-',
+  Slash: '/', NumpadDivide: '/',
+  NumpadMultiply: '*',
+};
+
+const NAMED_KEYS = {
+  NumpadEnter: 'equals',
+};
+
+/**
+ * Resolve a KeyboardEvent to a calculator action, independent of layout.
+ *
+ * `event.key` is preferred when it already means the intended thing, so
+ * shift-modified input such as "+" on a QWERTY layout still works. Only when
+ * it does not — an AZERTY digit, for example — do we fall back to the physical
+ * key, which is what makes the calculator work on every keyboard layout rather
+ * than only the one its author happened to use.
+ */
 function keyFromEvent(event) {
+  // Named actions are checked by character first. "Enter", "Backspace",
+  // "Escape" and "Delete" mean the same thing on every layout, so this works
+  // even in environments that do not supply `event.code` at all.
   if (event.key === 'Enter' || event.key === '=') return 'equals';
   if (event.key === 'Backspace') return 'backspace';
-  if (event.key === 'Escape') return 'clear';
-  if (event.key === 'Delete') return 'clear';
-  // × ÷ are what the buttons show; * / are what the parser accepts.
-  if (event.key === '×') return '*';
-  if (event.key === '÷') return '/';
+  if (event.key === 'Escape' || event.key === 'Delete') return 'clear';
+
+  // Then by physical key, which is how a non-QWERTY digit is recognised.
+  /*
+   * Shift is what disambiguates the two conflicting cases:
+   *
+   *   QWERTY, Shift+9  -> key "(", code Digit9  -> the user wants "("
+   *   AZERTY, Digit6    -> key "-", code Digit6  -> the user wants "6"
+   *
+   * Both have a literal `event.key` that disagrees with its own code, and they
+   * differ only in whether shift is held. So trust the character when shift is
+   * involved, and the physical key otherwise.
+   */
+  if (event.shiftKey && LITERAL_KEYS.has(event.key)) return event.key;
+
+  const fromCode = CODE_TO_KEY[event.code];
+  if (fromCode && LITERAL_KEYS.has(fromCode)) return fromCode;
+
+  if (LITERAL_KEYS.has(event.key)) return event.key;
+
   return event.key;
 }
 
