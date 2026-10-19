@@ -1,0 +1,33 @@
+{
+  "name": "gip-challenges",
+  "version": "1.0.0",
+  "private": true,
+  "description": "One engineering portfolio demonstrating seven GIP challenges: three real backend APIs, two vanilla-JS frontends, and two algorithm implementations.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@11.28.5",
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" --filter \"./services/*\" dev",
+    "dev:portfolio": "pnpm --filter @gip/portfolio dev",
+    "dev:calculator": "pnpm --filter @gip/calculator dev",
+    "dev:autocomplete": "pnpm --filter @gip/autocomplete dev",
+    "dev:lost-found": "pnpm --filter @gip/lost-found-api dev",
+    "dev:auth": "pnpm --filter @gip/auth-api dev",
+    "dev:flash-sale": "pnpm --filter @gip/flash-sale-api dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
+    "db:reset": "docker compose down -v && docker compose up -d postgres",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vitest": "^5.0.5"
+  }
+}

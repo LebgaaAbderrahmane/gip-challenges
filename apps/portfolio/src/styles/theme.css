@@ -1,0 +1,85 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens (plan §5.1).
+ *
+ * Every component references these semantic variables rather than raw hex, so
+ * the palette can be retuned in one place. These values are a starting point,
+ * not an accessibility certification — contrast is verified during the
+ * accessibility pass (plan §5.2 / P30).
+ */
+@theme {
+  --color-bg: #101116;
+  --color-surface: #191c25;
+  --color-surface-elevated: #222633;
+  --color-accent: #a78bfa;
+  --color-accent-strong: #8b5cf6;
+  --color-accent-muted: #a78bfa26;
+
+  --color-text: #f4f4f5;
+  --color-text-muted: #a1a1aa;
+  --color-text-subtle: #71717a;
+
+  --color-border: #303442;
+  --color-border-strong: #3d4256;
+
+  /* Status colours are never the only signal — every status is also
+     accompanied by a text label or icon (plan §5.2). */
+  --color-success: #34d399;
+  --color-success-muted: #34d3991f;
+  --color-warning: #fbbf24;
+  --color-warning-muted: #fbbf241f;
+  --color-danger: #f87171;
+  --color-danger-muted: #f871711f;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono',
+    Menlo, Consolas, 'Liberation Mono', monospace;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    color-scheme: dark;
+  }
+
+  /* Respect the OS setting. Motion is decorative here, never informative. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    @apply bg-bg text-text font-sans antialiased;
+    margin: 0;
+    min-height: 100dvh;
+  }
+
+  /* Visible focus for keyboard users on every interactive element. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+    border-radius: 2px;
+  }
+
+  code,
+  kbd,
+  pre,
+  samp {
+    @apply font-mono;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+}

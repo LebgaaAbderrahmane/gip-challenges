@@ -1,0 +1,14 @@
+{
+  "name": "@gip/calculator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Vanilla HTML/CSS/JS calculator. No framework, no dependencies — required by the challenge brief.",
+  "scripts": {
+    "dev": "node ../../scripts/serve-demo.mjs calculator 5174",
+    "build": "node build.mjs",
+    "test": "vitest run",
+    "typecheck": "echo \"calculator is plain JavaScript — no TypeScript step\"",
+    "lint": "node --check calculator.js && node --check parser.js"
+  }
+}

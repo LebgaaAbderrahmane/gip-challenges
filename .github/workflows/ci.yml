@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# The badge on the README is read from this workflow's status, so a displayed
+# "tests passing" claim cannot drift from reality (plan §2, §17.6).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: gip
+          POSTGRES_PASSWORD: gip_local_dev_only
+          POSTGRES_DB: gip
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U gip -d gip"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set up schemas
+        run: |
+          docker exec -i ${{ job.services.postgres.id }} psql -U gip -d gip < scripts/db/init/01-schemas.sql
+        # The service container is reachable as "postgres" from the runner host.
+        continue-on-error: true
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+        env:
+          DATABASE_URL: postgres://gip:gip_local_dev_only@localhost:5433/gip
+          JWT_SECRET: ci-only-not-a-real-secret-value-000000000000
+
+      - name: Build
+        run: pnpm build
+        env:
+          VITE_LOST_FOUND_API_URL: https://example.invalid
+          VITE_AUTH_API_URL: https://example.invalid
+          VITE_FLASH_SALE_API_URL: https://example.invalid

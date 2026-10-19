@@ -1,0 +1,42 @@
+# Local PostgreSQL for development and integration tests. OPTIONAL.
+#
+# Docker is NOT required. By default the services start an embedded real
+# PostgreSQL instance automatically when DATABASE_URL is unset, so `pnpm dev`
+# and `pnpm test` work on a machine with no Docker daemon.
+#
+# Use this file when you want a long-lived database that survives between test
+# runs, or to match the production topology more closely.
+#
+#   pnpm db:up      start
+#   pnpm db:down    stop
+#   pnpm db:reset   destroy volumes and start clean (destroys all local data)
+#
+# When running this, set DATABASE_URL=postgres://gip:gip_local_dev_only@localhost:5433/gip
+#
+# Production is Neon (free tier) — see docs/deployment.md.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: gip-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gip
+      POSTGRES_PASSWORD: gip_local_dev_only
+      POSTGRES_DB: gip
+      # Deterministic collation so ordering is stable across machines.
+      POSTGRES_INITDB_ARGS: '--locale=C --encoding=UTF8'
+    ports:
+      - '5433:5432'
+    volumes:
+      - gip-pgdata:/var/lib/postgresql/data
+      - ./scripts/db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U gip -d gip']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  gip-pgdata:
