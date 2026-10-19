@@ -39,8 +39,10 @@ export function testConfig(overrides: Partial<ServiceConfig> = {}): ServiceConfi
 }
 
 /** Builds an app against the real test database. */
-export async function buildTestApp(): Promise<FastifyInstance> {
-  const config = testConfig();
+export async function buildTestApp(
+  overrides: Partial<ServiceConfig> = {},
+): Promise<FastifyInstance> {
+  const config = testConfig(overrides);
 
   await migrate({ connectionString: config.databaseUrl, schema: config.schema });
 

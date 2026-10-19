@@ -22,6 +22,12 @@ export interface ServiceConfig {
   jwtAudience?: string;
   /** How long an issued token is valid for, e.g. "15m". */
   jwtExpiresIn?: string;
+  /**
+   * The maximum number of attempts per minute on the rate-limited routes.
+   *
+   * Generous in test, so a test suite is not throttled by its own cases.
+   */
+  rateLimitMax?: number;
 }
 
 export class ConfigError extends Error {
@@ -94,5 +100,6 @@ export function loadConfig(
     jwtIssuer: read(env, 'JWT_ISSUER'),
     jwtAudience: read(env, 'JWT_AUDIENCE'),
     jwtExpiresIn: read(env, 'JWT_EXPIRES_IN') ?? '15m',
+    rateLimitMax: nodeEnv === 'test' ? 10_000 : Number(read(env, 'RATE_LIMIT_MAX') ?? 10),
   };
 }

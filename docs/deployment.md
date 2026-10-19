@@ -9,7 +9,7 @@ ones a jury will use.
 |---|---|---|
 | Portfolio | `https://abderrahmane-gip-challenge.netlify.app` | Static build on Netlify |
 | Lost & Found API | `https://gip-challenges.onrender.com` | Fastify on Render, free tier |
-| Authentication API | *(not deployed yet)* | Day 6 |
+| Authentication API | *(ready to deploy)* | Fastify on Render, free tier |
 | Flash Sale API | *(not deployed yet)* | Day 8 |
 
 | Resource | Where |
