@@ -15,11 +15,13 @@ build/
 *.pem
 *.key
 
-# Local database volumes and dumps
-*.sql
-!migrations/**/*.sql
+# Database dumps and ad-hoc SQL
+*.dump
 docker-data/
 pgdata/
+
+# Schema and migration SQL IS tracked — these are source, not data.
+# (Only dump output is ignored.)
 
 # Logs
 *.log
