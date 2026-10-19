@@ -152,7 +152,16 @@ and the recursion stack.
 
 ## 8. Test cases and actual results
 
-**42 tests, all passing** (run via `pnpm --filter @gip/calculator test`).
+**94 tests, all passing** (run via `pnpm --filter @gip/calculator test`).
+
+### Key resolution (keymap.test.js, 33 tests)
+
+Covers each source alone and in combination: a QWERTY digit row, an AZERTY
+digit row with a usable `code`, the same with an empty `code`, the same with
+`code: 'Unidentified'`, the keypad with NumLock engaged and disengaged, the
+keypad with no usable `code` but `location: 3`, shifted characters, named
+actions, and the cases that must be *rejected* — a letter, Tab, an arrow key,
+and an arrow key whose keycode is also a keypad digit.
 
 ### Parser (21 tests)
 
@@ -176,6 +185,12 @@ tested rather than assumed:
 - Every case from the challenge's test table, via clicks
 - Keyboard: digits and operators, `Enter`, `=`, `Escape`, `Backspace`, parentheses
 - `/` prevents the browser default; modified keystrokes do **not**
+- Layouts: a dedicated suite drives the real key handling with QWERTY, French
+  AZERTY, keypad and NumLock-off events, including events whose `code` is
+  empty or `Unidentified`
+- Parity: the portfolio has its own suite asserting it forwards exactly the
+  keys the demo accepts, so the two copies of the rules can never drift apart
+  again
 - Input guards: operator replacement, unary minus after `*`, single decimal point, implicit multiply
 - Error behaviour: `5 / 0` shows "Error" and keeps the expression
 
