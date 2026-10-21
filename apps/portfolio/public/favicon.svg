@@ -6,7 +6,7 @@
     asks for, and it is tiny — a favicon is the first thing a visitor sees
     in their tab, not something that needs to carry detail.
   -->
-  <rect width="64" height="64" rx="14" fill="#a78bfa" />
+  <rect width="64" height="64" rx="14" fill="#a3e635" />
   <text
     x="32"
     y="41"

@@ -8,11 +8,19 @@
  * The steps deliberately build on each other: the token from the first step
  * is the token the second step needs, which is the whole point of the three
  * services sharing a secret.
+ *
+ * The steps are a STRIP, not an overlay.
+ *
+ * The tour used to dim the page and cut a hole over the thing it was
+ * talking about. It was precise and it was useless: the thing being
+ * explained is usually a whole panel, so the "hole" was most of the page
+ * and the page behind it was too dark to read. A slim bar under the
+ * header says the same thing and leaves the page alone.
  */
 
 export interface WalkthroughStep {
   id: string;
-  /** The step title, shown in the panel. */
+  /** The step title, shown in the card. */
   title: string;
   /** What to do. */
   instruction: string;
@@ -20,7 +28,7 @@ export interface WalkthroughStep {
   href: string;
   /** The label for the link. */
   action: string;
-  /** The challenge this step belongs to, for the panel's context line. */
+  /** The challenge this step belongs to, for the card's context line. */
   challenge: string;
 }
 
@@ -29,7 +37,7 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     id: 'sign-in',
     title: 'Get a token',
     instruction:
-      'Create an account and sign in. The response carries a token, and the panel offers a button to copy it.',
+      'Create an account and sign in. The sign-in response carries a token, and the button next to it copies it.',
     href: '/tasks/auth',
     action: 'Open the Authentication API',
     challenge: 'gip-05 · Authentication API',

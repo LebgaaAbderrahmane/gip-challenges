@@ -94,24 +94,7 @@ html.is-embedded body {
   text-align: left;
 }
 
-.calc__inspector-toggle {
-  flex: none;
-  min-width: 2rem;
-  min-height: 2rem;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  background: var(--surface);
-  color: var(--text-subtle);
-  font-size: 0.9375rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: color 120ms ease, border-color 120ms ease;
-}
 
-.calc__inspector-toggle:hover {
-  color: var(--accent);
-  border-color: var(--border-strong);
-}
 
 .calc__inspector-toggle:focus-visible {
   outline: 2px solid var(--accent);

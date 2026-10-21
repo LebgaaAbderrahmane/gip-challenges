@@ -372,7 +372,50 @@ the keyboard produced and resolves it through a layout-aware key map
 reconstructing the key from `event.code` — is wrong on exactly the layouts where it matters.
 The autocomplete app uses the same resolution.
 
-### 7.2 The API tester
+### 7.2 The tour is a strip, not an overlay
+
+The guided walkthrough is a slim bar under the header. It says which step you are on, what to
+do, and how to get to the next one, and then it gets out of the way.
+
+It has been three things, and each of the first two was wrong in a way worth recording:
+
+| | What it was | Why it failed |
+|---|---|---|
+| 1 | A card docked in the corner of every page | It took screen space from every page and became something to ignore. A permanent widget is a permanent cost. |
+| 2 | A spotlight: the page dimmed and a hole was cut over the thing being explained | The thing being explained is usually a whole panel, so the "hole" was most of the page and the page behind it was too dark to read. Precise and useless. |
+| 3 | **A strip under the header** | The page stays exactly as it was. |
+
+The rule behind all three: **guidance should not cost the visitor the thing it is guiding them
+through.** A strip satisfies that; an overlay does not.
+
+The position is remembered in `localStorage`, so a return visit picks up where they left off,
+and the same button brings the tour back after it is closed. Being easy to dismiss **and** easy
+to recall is the whole trick — dismissal alone just means nobody ever sees it again.
+
+### 7.3 The site is not a wall of text
+
+The first version of this site had **one graphic** on the landing page, a CI badge, and 695
+words. It was accurate and it was dull. Three things changed that:
+
+- **A live terminal in the hero.** It types a command and runs it — a real `fetch` to a
+  deployed service, from the browser, at that moment. The stock in that terminal is the stock in
+  the database. Only read requests are made: a hero animation that placed orders on the public
+  database every time somebody loaded the page would be a bad neighbour.
+- **A small animated visual on every challenge card.** Each one is an honest picture of the
+  mechanism: the calculator really evaluates `2 + 3 * 4`, the autocomplete really searches the
+  supplied records, the stock bar really counts down. They animate a *colour*, never an
+  *opacity* — fading text out reduces its contrast against the background, and an animation that
+  makes the words harder to read is not a decoration.
+- **The real code, on the challenge page.** Each challenge shows the one part of its
+  implementation that contains the difficulty, copied from the repository, with a copy button.
+  The highlighting is a small tokenizer in `CodeSnippet.tsx` rather than a dependency: it is a
+  few dozen lines instead of a few hundred kilobytes, and it is enough for a handful of
+  snippets.
+
+The cards have a **fixed height**, so the grid is even and an animation inside one card cannot
+change its height and shove the rest of the grid around.
+
+### 7.4 The API tester
 
 The tester is a small client for the deployed APIs: pick an operation, fill the parameters and
 the body, press send. The request goes from the browser **straight to the API** — there is no
@@ -389,14 +432,14 @@ The parts worth mentioning:
 - **The curl command is generated**, so a visitor can leave the browser entirely and reproduce
   the request exactly.
 
-### 7.3 The Flash Sale lab
+### 7.5 The Flash Sale lab
 
 The lab is the concurrency proof, made visible. It fires genuinely simultaneous requests at
 the deployed API and shows each one as it lands, with a live counter. Every number it displays
 comes from the API — the stock from the products endpoint, the outcomes from the responses, the
 order list read back from the service. There are no mock numbers anywhere in it.
 
-### 7.4 The shared session
+### 7.6 The shared session
 
 Signing in on the Auth page stores the token **in memory only** — a React context, never
 `localStorage`, never a cookie, never the URL. The other two challenge pages read it and offer

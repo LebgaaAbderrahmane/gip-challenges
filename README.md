@@ -50,6 +50,19 @@ verbatim in [`docs/brief.md`](docs/brief.md) so every requirement stays traceabl
 > missing transitive dependencies). `pnpm` is used throughout instead; the workspace layout is
 > otherwise conventional.
 
+### Design
+
+| | |
+|---|---|
+| Accent | Lime `#a3e635` — a "run" green, 12.5:1 on the page background |
+| Success | Teal `#2dd4bf` — moved off green so the accent and the success state never compete |
+| Type | Inter, with JetBrains Mono for code and labels |
+| Motion | Only where it carries meaning, and never when the OS asks for less of it |
+
+The whole palette lives in one file, `apps/portfolio/src/styles/theme.css`, as semantic tokens
+rather than raw hex, so it can be retuned in one place. Every colour pair in it was checked
+numerically for contrast; the smallest is 5.01:1, against a 4.5:1 requirement.
+
 ---
 
 ## Getting started

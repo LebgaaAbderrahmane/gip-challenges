@@ -11,15 +11,19 @@ is the shortest path through it.
 
 ## 1. Where to start
 
-Open the portfolio and follow the **guided walkthrough** panel in the top-right corner. It is a
-seven-step story that moves through all seven challenges in order, and every step is a link into
-the part of the site it is talking about. Each challenge page also has an **API tester** that
-sends real requests to the deployed backend, so nothing on the site is a mock.
+Open the portfolio and press **Tour** in the header. It is a seven-step story that moves through
+all seven challenges in order, and every step is a link into the part of the site it is talking
+about. The tour is a slim strip under the header, so the page stays in front of you and stays
+clickable while you work through it.
 
-There is one page that maps the submission to the brief: **`/evaluate`**. It lists each
-requirement from the brief, states which are met and how to see them, and separates the brief's
-requirements from the choices we made. That separation matters: it is a different thing to say
-"the brief asked for this" and "we decided this".
+Each challenge page also has an **API tester** that sends real requests to the deployed backend,
+so nothing on the site is a mock.
+
+The **evaluation map** — every requirement from the brief, in the brief's own words, with where
+to see it and the one thing to look for — is at
+[`docs/evaluation-map.md`](./evaluation-map.md). It separates the brief's requirements from the
+choices we made, which matters: it is a different thing to say "the brief asked for this" and
+"we decided this".
 
 ---
 

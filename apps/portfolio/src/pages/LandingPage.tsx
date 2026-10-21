@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 
 import TaskCard from '@/components/TaskCard';
+import LiveTerminal from '@/components/LiveTerminal';
 import { TASKS } from '@/data/tasks';
 
 const GITHUB_URL = 'https://github.com/LebgaaAbderrahmane/gip-challenges';
@@ -30,7 +31,7 @@ const documents = [
   {
     label: 'How to evaluate this',
     description: 'What the brief asked, where to see it, and what to look for',
-    href: '/evaluate',
+    href: `${GITHUB_URL}/blob/main/docs/evaluation-map.md`,
   },
   {
     label: 'README',
@@ -69,53 +70,52 @@ export default function LandingPage() {
     <>
       {/* Hero */}
       <section className="border-b border-border">
-        <div className="container-page py-20 sm:py-28">
-          <p className="font-mono text-sm text-accent">gip-challenges</p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
-            Seven challenges. One engineering workspace.
-          </h1>
-          <p className="mt-5 max-w-2xl text-lg leading-relaxed text-text-muted">
-            A working portfolio covering seven challenges: three deployed backend APIs, two
-            vanilla-JavaScript frontends and two algorithm implementations — each with its own
-            tests, documentation and demo route.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link
-              to="/evaluate"
-              className="rounded-lg bg-accent px-5 py-2.5 font-medium text-bg transition-colors hover:bg-accent-strong"
-            >
-              How to evaluate this
-            </Link>
-            <Link
-              to="/tasks"
-              className="rounded-lg border border-border px-5 py-2.5 font-medium transition-colors hover:border-border-strong hover:bg-surface"
-            >
-              Explore challenges
-            </Link>
-            <a
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="rounded-lg border border-border px-5 py-2.5 font-medium transition-colors hover:border-border-strong hover:bg-surface"
-            >
-              View source
-            </a>
-            <a
-              href={CI_URL}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 transition-colors hover:border-border-strong hover:bg-surface"
-            >
-              <img
-                src={CI_BADGE_URL}
-                alt="CI status: the test, lint and build workflow"
-                width={92}
-                height={20}
-                className="h-5 w-auto"
-              />
-              <span className="text-sm text-text-muted">CI</span>
-            </a>
+        <div className="container-page grid items-center gap-12 py-16 sm:py-20 lg:grid-cols-2 lg:gap-16 lg:py-24">
+          <div>
+            <p className="font-mono text-sm text-accent">gip-challenges</p>
+            <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
+              Seven challenges. One engineering workspace.
+            </h1>
+            <p className="mt-5 max-w-xl text-lg leading-relaxed text-text-muted">
+              A working portfolio covering seven challenges: three deployed backend APIs, two
+              vanilla-JavaScript frontends and two algorithm implementations — each with its own
+              tests, documentation and demo route.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link
+                to="/tasks"
+                className="rounded-lg bg-accent px-5 py-2.5 font-medium text-bg transition-colors hover:bg-accent-strong"
+              >
+                Explore challenges
+              </Link>
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="rounded-lg border border-border px-5 py-2.5 font-medium transition-colors hover:border-border-strong hover:bg-surface"
+              >
+                View source
+              </a>
+              <a
+                href={CI_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 transition-colors hover:border-border-strong hover:bg-surface"
+              >
+                <img
+                  src={CI_BADGE_URL}
+                  alt="CI status: the test, lint and build workflow"
+                  width={92}
+                  height={20}
+                  className="h-5 w-auto"
+                />
+                <span className="text-sm text-text-muted">CI</span>
+              </a>
+            </div>
           </div>
+
+          {/* The system, running, right here in the page. */}
+          <LiveTerminal />
         </div>
       </section>
 

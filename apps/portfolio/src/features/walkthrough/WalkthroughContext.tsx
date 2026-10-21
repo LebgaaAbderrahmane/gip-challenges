@@ -6,9 +6,20 @@ import { WALKTHROUGH_STORAGE_KEY, WALKTHROUGH_STEPS } from './steps';
 /**
  * The guided walkthrough.
  *
- * It is a suggestion, never a gate: a visitor can dismiss it and the site
- * works exactly the same. The position is remembered so a return visit picks
- * up where they left off.
+ * It is a suggestion, never a gate. Nothing about it is on screen until a
+ * visitor asks for it, and the site works exactly the same either way.
+ *
+ * Two decisions worth recording, both of them the reason this is not the
+ * panel it used to be:
+ *
+ *   - It OPENS, it does not SIT. A docked card that is always there takes
+ *     screen space from every page and becomes something to ignore. A
+ *     spotlight that appears when asked for is an event.
+ *
+ *   - It can be RECALLED. Closing it must not lose it: the same button
+ *     brings it back, and the position is remembered, so a return visit
+ *     picks up where they left off. Being easy to dismiss AND easy to
+ *     find again is the whole trick.
  *
  * Only the STEP NUMBER is stored — never anything about the session or the
  * token. The walkthrough and the session are kept apart on purpose.
@@ -19,16 +30,16 @@ export interface Walkthrough {
   /** Which step it is, counting from 1. */
   index: number;
   total: number;
-  /** Whether the panel is showing at all. */
+  /** Whether the tour is running. */
   open: boolean;
+  /** Starts the tour, at the remembered step. */
+  start: () => void;
   /** Moves to a step. */
   goTo: (index: number) => void;
   /** Moves to the next step. */
   next: () => void;
-  /** Hides the panel for good. */
-  dismiss: () => void;
-  /** Brings it back. */
-  restore: () => void;
+  /** Closes the tour, remembering the position. */
+  close: () => void;
 }
 
 const WalkthroughContext = createContext<Walkthrough | null>(null);
@@ -41,7 +52,7 @@ const readStoredStep = (): number => {
       return parsed;
     }
   } catch {
-    // Storage can be refused. The walkthrough still works for this visit.
+    // Storage can be refused. The tour still works for this visit.
   }
   return 0;
 };
@@ -56,7 +67,7 @@ const writeStoredStep = (index: number) => {
 
 export function WalkthroughProvider({ children }: { children: ReactNode }) {
   const [index, setIndex] = useState(readStoredStep);
-  const [dismissed, setDismissed] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const goTo = useCallback((next: number) => {
     const clamped = Math.max(0, Math.min(WALKTHROUGH_STEPS.length - 1, next));
@@ -66,7 +77,9 @@ export function WalkthroughProvider({ children }: { children: ReactNode }) {
 
   const next = useCallback(() => {
     if (index >= WALKTHROUGH_STEPS.length - 1) {
-      setDismissed(true);
+      // The last step closes the tour and clears the position, because
+      // somebody who has finished the story has nothing to come back to.
+      setOpen(false);
       try {
         window.localStorage.removeItem(WALKTHROUGH_STORAGE_KEY);
       } catch {
@@ -82,13 +95,13 @@ export function WalkthroughProvider({ children }: { children: ReactNode }) {
       current: WALKTHROUGH_STEPS[index] ?? null,
       index,
       total: WALKTHROUGH_STEPS.length,
-      open: !dismissed,
+      open,
+      start: () => setOpen(true),
       goTo,
       next,
-      dismiss: () => setDismissed(true),
-      restore: () => setDismissed(false),
+      close: () => setOpen(false),
     }),
-    [index, dismissed, goTo, next],
+    [index, open, goTo, next],
   );
 
   return (

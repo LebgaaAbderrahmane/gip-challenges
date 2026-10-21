@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 
 import ServiceStatusStrip from '@/features/status/ServiceStatusStrip';
+import TourButton from '@/features/walkthrough/TourButton';
+import TourBar from '@/features/walkthrough/TourBar';
 
 const GITHUB_URL = 'https://github.com/LebgaaAbderrahmane/gip-challenges';
 
@@ -48,33 +50,26 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
             >
               G
             </span>
-            <span>
-              GIP Challenges
-              <span className="ml-2 hidden text-xs font-normal text-text-subtle sm:inline">
-                engineering portfolio
-              </span>
-            </span>
+            <span>GIP Challenges</span>
           </Link>
 
-          <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
-            <NavLink to="/evaluate" className={navLinkClass}>
-              How to evaluate
-            </NavLink>
-            <NavLink to="/tasks" className={navLinkClass}>
-              Challenges
-            </NavLink>
-            <NavLink to="/about" className={navLinkClass}>
-              About
-            </NavLink>
-            <a
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="rounded-md px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-surface hover:text-text"
-            >
-              Source
-            </a>
-          </nav>
+          <div className="flex items-center gap-2">
+            <TourButton />
+
+            <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
+              <NavLink to="/tasks" className={navLinkClass}>
+                Challenges
+              </NavLink>
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="rounded-md px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-surface hover:text-text"
+              >
+                Source
+              </a>
+            </nav>
+          </div>
 
           <button
             type="button"
@@ -94,14 +89,8 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
             className="border-t border-border bg-surface md:hidden"
           >
             <div className="container-page flex flex-col py-2">
-              <NavLink to="/evaluate" className={navLinkClass}>
-                How to evaluate
-              </NavLink>
               <NavLink to="/tasks" className={navLinkClass}>
                 Challenges
-              </NavLink>
-              <NavLink to="/about" className={navLinkClass}>
-                About
               </NavLink>
               <a
                 href={GITHUB_URL}
@@ -115,6 +104,9 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
           </nav>
         )}
       </header>
+
+      {/* The tour strip, directly under the header, when it is running. */}
+      <TourBar />
 
       <main id="main" className="flex-1">
         {children}
@@ -136,9 +128,6 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
               >
                 github.com/LebgaaAbderrahmane
               </a>
-              <Link to="/evaluate" className="underline decoration-border underline-offset-4 hover:text-text">
-                How to evaluate this
-              </Link>
             </p>
           </div>
           <ServiceStatusStrip />

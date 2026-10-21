@@ -12,9 +12,21 @@
   --color-bg: #101116;
   --color-surface: #191c25;
   --color-surface-elevated: #222633;
-  --color-accent: #a78bfa;
-  --color-accent-strong: #8b5cf6;
-  --color-accent-muted: #a78bfa26;
+  /*
+   * The accent is a lime green.
+   *
+   * Purple was the original, and it worked, but the whole portfolio is about
+   * systems that are live and correct — a "run" green says that better than a
+   * violet does, and it separates the accent from the status colours.
+   *
+   * A3E635 is Tailwind's lime-400: vivid enough to read as green on a
+   * near-black background, and far enough from the old emerald success
+   * colour that the two never compete. The success colour moved to teal
+   * (below) precisely because of that.
+   */
+  --color-accent: #a3e635;
+  --color-accent-strong: #84cc16;
+  --color-accent-muted: #a3e63526;
 
   --color-text: #f4f4f5;
   --color-text-muted: #a1a1aa;
@@ -31,8 +43,15 @@
 
   /* Status colours are never the only signal — every status is also
      accompanied by a text label or icon (plan §5.2). */
-  --color-success: #34d399;
-  --color-success-muted: #34d3991f;
+  /*
+   * The success colour is teal, not green.
+   *
+   * The accent is now a green, so a green "success" badge next to a green
+   * button would be genuinely ambiguous. Teal is far enough away to read as
+   * a different family of colour while still being clearly positive.
+   */
+  --color-success: #2dd4bf;
+  --color-success-muted: #2dd4bf1f;
   --color-warning: #fbbf24;
   --color-warning-muted: #fbbf241f;
   --color-danger: #f87171;

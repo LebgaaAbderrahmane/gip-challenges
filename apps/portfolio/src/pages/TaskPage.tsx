@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 
 import DemoFrame from '@/components/DemoFrame';
+import CodeSnippet from '@/components/CodeSnippet';
 import StatusBadge from '@/components/StatusBadge';
 import TaskContentSections from '@/components/TaskContentSections';
 import ApiTester from '@/features/api-tester/ApiTester';
@@ -151,7 +152,10 @@ export default function TaskPage() {
           <FlashSaleLab />
         </section>
       ) : apiService ? (
-        <section aria-label="API tester" className="mt-8">
+        <section
+          aria-label="API tester"
+          className="mt-8"
+        >
           {/*
             The key remounts the tester when the service changes. The
             component is reused across a route change, so without it the
@@ -177,6 +181,23 @@ export default function TaskPage() {
           className="mt-8 rounded-xl border border-dashed border-border bg-surface/50 p-8 text-center"
         >
           <p className="text-text-muted">The interactive demo for this challenge is being built.</p>
+        </section>
+      )}
+
+      {/* The implementation worth reading. */}
+      {task?.code && (
+        <section className="mt-10">
+          <h2 className="text-xl font-semibold tracking-tight">The implementation</h2>
+          <p className="mt-2 max-w-2xl text-sm text-text-muted">
+            The part of this challenge that actually contains the difficulty. It is the real code,
+            copied from the repository.
+          </p>
+          <CodeSnippet
+            className="mt-4"
+            language={task.code.language}
+            file={task.code.file}
+            code={task.code.source}
+          />
         </section>
       )}
 

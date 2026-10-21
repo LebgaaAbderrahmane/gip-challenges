@@ -1,14 +1,12 @@
 import { Route, Routes } from 'react-router-dom';
 
 import SiteShell from '@/layouts/SiteShell';
+import ScrollToTop from '@/components/ScrollToTop';
 import { SessionProvider } from '@/features/session/SessionContext';
 import { WalkthroughProvider } from '@/features/walkthrough/WalkthroughContext';
-import WalkthroughPanel from '@/features/walkthrough/WalkthroughPanel';
 import LandingPage from '@/pages/LandingPage';
 import TasksOverviewPage from '@/pages/TasksOverviewPage';
 import TaskPage from '@/pages/TaskPage';
-import EvaluationMapPage from '@/pages/EvaluationMapPage';
-import AboutPage from '@/pages/AboutPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 export default function App() {
@@ -21,6 +19,7 @@ export default function App() {
    */
   return (
     <SessionProvider>
+      <ScrollToTop />
       <WalkthroughProvider>
         <SiteShell>
           <Routes>
@@ -30,12 +29,9 @@ export default function App() {
                 data/tasks.ts, so a new task cannot exist without a working
                 route. */}
             <Route path="/tasks/:slug" element={<TaskPage />} />
-            <Route path="/evaluate" element={<EvaluationMapPage />} />
-            <Route path="/about" element={<AboutPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </SiteShell>
-        <WalkthroughPanel />
       </WalkthroughProvider>
     </SessionProvider>
   );

@@ -18,7 +18,6 @@ import {
   openDebug,
   recordKeyEvent,
   startDebug,
-  toggleInspector,
 } from './keydebug.js';
 
 /*
@@ -275,10 +274,17 @@ if (debugEnabled()) startDebug();
 
 focusCapture();
 
-// The inspector toggle, for anyone whose keyboard behaves unexpectedly.
-document.getElementById('toggle-inspector')?.addEventListener('click', () => {
-  toggleInspector();
-});
+/*
+ * The keyboard inspector is no longer behind a button.
+ *
+ * It was a small keyboard glyph in the corner, and it was clutter on a
+ * page whose whole point is that you just start typing. It is still here
+ * for the people who need it, in the two ways that actually matter:
+ *
+ *   - append ?debug=1 to the URL, and it opens at startup
+ *   - it opens by itself when a key cannot be resolved, because at that
+ *     moment seeing what the browser reported is exactly what is wanted
+ */
 
 render();
 
