@@ -221,15 +221,15 @@ Everything runs from one command:
 
 ```bash
 pnpm install
-pnpm verify     # lint + typecheck + 360 tests + build
+pnpm verify     # lint + typecheck + 378 tests + build
 ```
 
-**360 tests** across six workspaces, in GitHub Actions on every push:
+**378 tests** across six workspaces, in GitHub Actions on every push:
 
 | Workspace | Tests |
 |---|---|
 | `apps/calculator` | 110 |
-| `apps/portfolio` | 110 |
+| `apps/portfolio` | 128 |
 | `apps/autocomplete` | 38 |
 | `services/lost-found-api` | 39 |
 | `services/auth-api` | 33 |

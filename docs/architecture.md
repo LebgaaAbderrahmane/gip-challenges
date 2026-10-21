@@ -450,12 +450,12 @@ behaviour: a token that lives in memory cannot be read by another script on the 
 
 ## 8. Testing
 
-**360 tests** across six workspaces, all run in CI on every push.
+**378 tests** across six workspaces, all run in CI on every push.
 
 | Workspace | Tests | What they cover |
 |---|---|---|
 | `apps/calculator` | 110 | the parser, the keyboard layouts, the text capture, the error state |
-| `apps/portfolio` | 110 | the components, the router, the API tester, the accessibility contract |
+| `apps/portfolio` | 128 | the components, the router, the API tester, the accessibility contract |
 | `apps/autocomplete` | 38 | the search, the ranking, the accent and apostrophe handling |
 | `services/lost-found-api` | 39 | the routes, the validation, the ownership rules |
 | `services/auth-api` | 33 | sign-up, sign-in, the hashing, the token, the rate limit |

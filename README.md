@@ -13,7 +13,7 @@ deployed backend APIs, two vanilla-JavaScript frontends, and two algorithm imple
 | **Portfolio** | <https://abderrahmane-gip-challenge.netlify.app> |
 | **Jury guide** | [`docs/jury-guide.md`](docs/jury-guide.md) — the shortest path through the submission |
 | **Architecture** | [`docs/architecture.md`](docs/architecture.md) — how it is put together, and why |
-| **Tests** | 360 across six workspaces, on every push |
+| **Tests** | 378 across six workspaces, on every push |
 
 ---
 
